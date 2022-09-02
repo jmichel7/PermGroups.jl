@@ -5,6 +5,7 @@ version = "0.1.0"
 [compat]
 julia = "1"
 Combinat = "0.0.3, 0.0.4"
+Reexport="1"
 
 [deps]
 Combinat = "a6b051d1-fc4b-4ede-b53e-347fa9fb9a74"
