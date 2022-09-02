@@ -94,7 +94,6 @@ module PermGroups
 using Reexport
 include("Perms.jl"); @reexport using .Perms
 include("Groups.jl"); @reexport using .Groups
-#using ..Util: getp, @GapObj
 using Combinat: tally, collectby
 export PermGroup, base, transversals, centralizers, symmetric_group, reduced,
   stab_onmats, Perm_onmats, onmats, on_classes
@@ -432,7 +431,7 @@ function invblocks(m,extra=nothing)
 end
 
 # fast method for centralizer(g,M;action=onmats) additionally centralizing extra
-function stab_onmats(g::PermGroup{T},M::AbstractMatrix,extra=nothing)where T
+function stab_onmats(g::PermGroup{T},M::AbstractMatrix;extra=nothing)where T
 # if length(g)>1
 #   print("g=",
 #        length.(filter(x->length(x)>1,orbits(g,1:maximum(degree.(gens(g)))))),
@@ -465,7 +464,7 @@ julia> stab_onmats(fourier(uc.families[20]))
 Group([(7,38), (39,44)(40,43)(41,42)])
 ```
 """
-function stab_onmats(M,extra=nothing;verbose=false)
+function stab_onmats(M::AbstractMatrix;extra=nothing,verbose=false)
   k=length(M)
   blocks=sort(invblocks(M,extra),by=x->-length(x))
   g=PermGroup()
@@ -473,12 +472,12 @@ function stab_onmats(M,extra=nothing;verbose=false)
   for r in blocks
     if length(r)>7 && verbose println("Large Block:$r")  end
     if length(r)>1
-      gr=stab_onmats(symmetric_group(length(r)), M[r,r];verbose)
+      gr=stab_onmats(symmetric_group(length(r)), M[r,r])
       g=Group(vcat(gens(g),gens(gr).^mappingPerm(eachindex(r),r)))
     end
     append!(I,r)
     p=mappingPerm(I,eachindex(I))
-    g=stab_onmats(Group(gens(g).^p), M[I,I];verbose)
+    g=stab_onmats(Group(gens(g).^p), M[I,I])
     g=Group(gens(g).^inv(p))
   end
   return g

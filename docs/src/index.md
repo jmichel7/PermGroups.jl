@@ -1,7 +1,10 @@
+This package implements permutations (`Perms`), groups (`Groups`) and combines
+them to make permutation groups (`PermGroups`). 
+
+It just depends on the package `Combinat`. The modules `Perms` and `Groups`
+could be independent packages of their own.
+
 # Permutations
-```@index
-Modules=[Perms]
-```
 ```@docs
 Perms
 Perm
@@ -31,9 +34,6 @@ mappingPerm
 Perm_rowcol
 ```
 # Groups
-```@index
-Modules=[Groups]
-```
 ```@docs
 Groups
 Group
@@ -70,9 +70,6 @@ Coset
 NormalCoset
 ```
 # Permutation groups
-```@index
-Modules=[PermGroups]
-```
 ```@docs
 PermGroups
 largest_moved_point(::PermGroup)
