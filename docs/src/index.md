@@ -61,6 +61,8 @@ fusion_conjugacy_classes
 minimal_words
 words(::Group)
 transporting_elt
+intersect(::Group,::Group)
+rand(::Group)
 isabelian
 iscyclic
 istrivial

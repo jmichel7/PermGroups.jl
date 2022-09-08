@@ -242,19 +242,6 @@ function Base.in(g::Perm,G::PermGroup)
   isone(g)
 end
 
-function Base.intersect(G::PermGroup, H::PermGroup) # horrible implementation
-  if all(x->x in H,gens(G)) return G end
-  if all(x->x in G,gens(H)) return H end
-  if min(length(G),length(H))>104000 
-    println("*** too large intersect($G,$H) -- calling Gap4.intersect") 
-    return Gapjm.Gap4.intersect(G,H)
-  end
-  if length(G)<length(H) res=Group(filter(x->x in H,elements(G)))
-  else res=Group(filter(x->x in G,elements(H)))
-  end
-  Groups.weedgens(res)
-end
-
 cycletypes(W::PermGroup,x)=map(o->cycletype(x,domain=o),orbits(W)) # first invariant
 
 function classinv(W::PermGroup)
@@ -291,12 +278,12 @@ end
 could  be  given  as  a  permutation  normalizing  `G`).  The result is the
 permutation of `1:nconjugacy_classes(G)` induced ny `aut`.
 
-```julia-rep1
-julia> WF=rootdatum("3D4")
-³D₄
+```julia-repl
+julia> W=Group(Perm(1,2),Perm(2,3),Perm(4,5),Perm(5,6))
+Group([(1,2), (2,3), (4,5), (5,6)])
 
-julia> on_classes(Group(WF),WF.phi)
-Perm{Int64}: (2,8,7)(5,13,12)
+julia> on_classes(W,Perm(1,4,2,5,3,6))
+Perm{Int64}: (2,4)(3,7)(6,8)
 ```
 """
 on_classes(G, aut)=Perm(map(c->position_class(G,c^aut),classreps(G)))
@@ -457,11 +444,9 @@ should   be  a  `PermGroup`)   this  is  just   a  fast  implementation  of
 and can handle matrices up to 80×80. If a list `extra` is given the result
 centralizes also `extra`.
 
-```julia-rep1
-julia> uc=UnipotentCharacters(complex_reflection_group(34));
-
-julia> stab_onmats(fourier(uc.families[20]))
-Group([(7,38), (39,44)(40,43)(41,42)])
+```julia-repl
+julia> stab_onmats((1:30)'.*(1:30).%15)
+Group([(10,25), (5,20), (12,27), (3,18), (9,24), (6,21), (13,28), (8,23), (7,22), (2,17), (14,29), (11,26), (4,19), (1,4)(2,8)(3,12)(6,9)(7,13)(11,14)(16,19)(17,23)(18,27)(21,24)(22,28)(26,29), (1,11)(2,7)(4,14)(5,10)(8,13)(16,26)(17,22)(19,29)(20,25)(23,28), (1,16), (15,30)])
 ```
 """
 function stab_onmats(M::AbstractMatrix;extra=nothing,verbose=false)
@@ -491,8 +476,8 @@ so is just an efficient version of
 `transporting_elt(symmetric_group(size(M,1)),M,N;action=onmats)`    If   in
 addition the vectors `m` and `n` are given, `p` should satisfy `m^p=n`.
 
-```julia-rep1
-julia> m=cartan(:D,12);
+```julia-repl
+julia> m=(1:30)'.*(1:30).%15;
 
 julia> n=^(m,Perm(1,5,2,8,12,4,7)*Perm(3,9,11,6);dims=(1,2));
 
