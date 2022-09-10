@@ -255,10 +255,10 @@ function positions_class(W::PermGroup,w)
   l=findall(==(cycletypes(W,w)),classinv(W))
   if length(l)==1 return l end
   if length(centre(W))>1
-    central=gens(centre(W))
-    l=filter(i->cycletypes.(Ref(W),classreps(W)[i].*central)==
-                cycletypes.(Ref(W),w.*central),l)
-    if length(l)==1 return l end
+    for c in filter(!isone,elements(centre(W)))
+      l=filter(i->cycletypes(W,classreps(W)[i].*c)==cycletypes(W,w*c),l)
+      if length(l)==1 return l end
+    end
   end
   l
 end
