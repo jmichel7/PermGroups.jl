@@ -189,6 +189,7 @@ macro perm_str(s::String)
   start=1
   s=replace(s,"\\n"=>"\n")
   res=Perm()
+  if match(r"^\s*\(\s*\)\s*$",s)!==nothing return res end
   while match(r"^\s*$"s,s[start:end])===nothing
     m=match(r"^\s*\((\s*\d+\s*,)+\s*\d+\)"s,s[start:end])
     if m===nothing error("malformed permutation: ",s) end

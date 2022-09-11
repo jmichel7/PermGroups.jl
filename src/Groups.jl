@@ -51,7 +51,7 @@ export Group, centralizer, centre, classreps, comm, commutator, order,
   Hom, isabelian, iscyclic, istrivial, words, minimal_words, 
   nconjugacy_classes, normalizer, orbit, orbits, position_class, 
   stabilizer, transporting_elt, transversal, words_transversal,
-  word, elements, kernel, getp, @GapObj
+  word, elements, kernel, getp, @GapObj, ConjugacyClass
 
 import ..Perms: orbit, orbits, order # suppress if used as indep. package
 #--------------------------------------------------------------------------
@@ -491,32 +491,46 @@ Base.length(G::Group)=length(words2(G))
 "`order(G::Group)` the number of elements of G"
 order(G::Group)=length(G)
 
-"`conjugacy_classes(G::Group)` conjugacy classes of `G` (as a `Vector{Vector}`)"
-function conjugacy_classes(G::Group{T})::Vector{Vector{T}} where T
+@GapObj struct ConjugacyClass{T,TW} 
+  G::TW
+  representative::T
+end
+
+function Base.show(io::IO,C::ConjugacyClass)
+  print(io,"ConjugacyClass(",C.G,",",C.representative,")")
+end
+
+"""
+`conjugacy_classes(G::Group)` conjugacy classes of `G` 
+(as a `Vector{ConjugacyClass}`)
+"""
+function conjugacy_classes(G::Group)
   get!(G,:classes) do
     if haskey(G,:classreps) 
-      [conjugacy_classes(G,i) for i in 1:nconjugacy_classes(G)]
+      [ConjugacyClass(G,x,Dict{Symbol,Any}()) for x in G.classreps]
     else res=orbits(G,elements(G))
-      G.classreps=first.(res)
+      # assumes l sortable
+      res=map(l->ConjugacyClass(G,minimum(l),Dict{Symbol,Any}(:elements=>sort(l))),res)
+      G.classreps=getproperty.(res,:representative)
       res
     end
   end
 end
 
-"`conjugacy_classes(G::Group,i::Integer)` the `i`-th class of `G`"
-function conjugacy_classes(G::Group{T},i::Int)::Vector{T} where T
-  if !haskey(G,:classes) 
-    G.classes=Vector{Vector{T}}(undef,nconjugacy_classes(G))
+elements(C::ConjugacyClass)=
+  get!(C,:elements)do 
+    orbit(C.G,C.representative)
   end
-  if !isassigned(G.classes,i) G.classes[i]=orbit(G,classreps(G)[i]) end
-  G.classes[i]
-end
+
+Base.in(x,C::ConjugacyClass)=x in elements(C)
 
 "`conjugacy_class(G::Group,g)` the class of `g`"
-conjugacy_class(G::Group,g)=orbit(G,g)
+conjugacy_class(G::Group,g)=conjugacy_class(G,position_class(G,g))
 
 "`position_class(G::Group,g)` index of conjugacy class to which `g` belongs"
 function position_class(G::Group,g)
+  p=findfirst(==(g),classreps(G))
+  if !isnothing(p) return p end
   findfirst(c->g in c,conjugacy_classes(G))
 end
 
@@ -539,13 +553,13 @@ field is filled it is used by  `conjugacy_classes`.
 function classreps(G::Group{T})::Vector{T} where T
   get!(G,:classreps) do
     if length(G)>10000 error("length(G)=",length(G),": should call Gap4")
-    else minimum.(conjugacy_classes(G))
+    else getp(conjugacy_classes,G,:classreps)
     end
   end
 end
 
 "`nconjugacy_classes(G::Group)` the number of conjugacy classes of `G`"
-nconjugacy_classes(G::Group)=length(classreps(G))
+nconjugacy_classes(G::Group)=length(conjugacy_classes(G))
 
 "`order(a)` the smallest integer `i≥1` such that `isone(a^i)`"
 function order(a)# default method
@@ -799,6 +813,10 @@ function order(a::NormalCoset)
   end
 end
 
+Base.copy(C::NormalCoset)=NormalCoset(Group(C),C.phi)
+
+Base.one(C::NormalCoset)=NormalCoset(Group(C))
+
 # assume H is normal and there is a function NormalCoset
 Base.:/(W::Group,H::Group)=Group(unique(map(x->NormalCoset(H,x),gens(W))),NormalCoset(H))
 
@@ -810,17 +828,39 @@ end
 
 nconjugacy_classes(G::NormalCoset)=length(classreps(G))
 
-function conjugacy_classes(G::NormalCoset{<:Group{T}})::Vector{Vector{T}} where T
+function conjugacy_classes(G::Group)
   get!(G,:classes) do
-    if length(G)>10000
-      error("length(G)=",length(G),": should call Gap4")
-    else
-      orbits(Group(G),elements(G))
+    if haskey(G,:classreps) 
+      [ConjugacyClass(G,x,Dict{Symbol,Any}()) for x in G.classreps]
+    else res=orbits(G,elements(G))
+      # assumes l sortable
+      res=map(l->ConjugacyClass(G,minimum(l),Dict{Symbol,Any}(:elements=>sort(l))),res)
+      G.classreps=getproperty.(res,:representative)
+      res
+    end
+  end
+end
+
+function elements(C::ConjugacyClass{T,TW})where {T,TW<:Coset}
+  get!(C,:elements)do 
+    orbit(Group(C.G),C.representative)
+  end
+end
+
+function conjugacy_classes(G::NormalCoset)
+  get!(G,:classes) do
+    if haskey(G,:classreps) 
+      [ConjugacyClass(G,x,Dict{Symbol,Any}()) for x in G.classreps]
+    else res=orbits(Group(G),elements(G))
+      res=map(l->ConjugacyClass(G,minimum(l),Dict{Symbol,Any}(:elements=>sort(l))),res)
+      G.classreps=getproperty.(res,:representative)
     end
   end
 end
 
 function position_class(G::NormalCoset,g)
+  p=findfirst(==(g),classreps(G))
+  if !isnothing(p) return p end
   findfirst(c->g in c,conjugacy_classes(G))
 end
 
@@ -860,7 +900,7 @@ end
 `phi` normalizes `G`. This general coset knows oly the general methods defined for normal cosets in this module, which in addition to those defined for
 cosets (see `Coset`) are
 
-  - `inv(C)` return `G.inv(phi)` (assumed euqal to `inv(phi).G`)
+  - `inv(C)` return `G.inv(phi)` (assumed equal to `inv(phi).G`)
   - `C*D` given another coset `G.psi` returns `G.phi*psi`
   - `C/D` given another coset `G.psi` returns `G.phi*inv(psi)`
   - `C^D` given another coset `G.psi` returns `G.inv(psi)*phi*psi`

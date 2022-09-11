@@ -242,6 +242,11 @@ function Base.in(g::Perm,G::PermGroup)
   isone(g)
 end
 
+# only difference with general method is sorting
+function Groups.elements(C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
+  sort(orbit(C.G,C.representative))
+end
+
 cycletypes(W::PermGroup,x)=map(o->cycletype(x,domain=o),orbits(W)) # first invariant
 
 function classinv(W::PermGroup)
@@ -267,7 +272,7 @@ function Groups.position_class(W::PermGroup,w)
   l=positions_class(W,w)
   if length(l)==1 return only(l) end
   for i in eachindex(l) 
-    if w in conjugacy_classes(W,l[i]) return l[i] end
+   if w in conjugacy_classes(W)[l[i]] return l[i] end
   end
 end
 
@@ -287,6 +292,11 @@ Perm{Int64}: (2,4)(3,7)(6,8)
 ```
 """
 on_classes(G, aut)=Perm(map(c->position_class(G,c^aut),classreps(G)))
+
+function Base.in(C::ConjugacyClass{T,TW},w::T)where{T,TW<:PermGroup}
+  r=searchsortedfirst(elements(C),w)
+  r<=length(C) && elments(C)[r]==w
+end
 
 #-------------- iteration on product of lists of group elements ---------------
 # if iterators=[i1,...,in] iterate on all products i1[j1]*...*in[jn]

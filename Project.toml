@@ -1,7 +1,7 @@
 name = "PermGroups"
 uuid = "0b63354f-98d5-4b2f-8b91-7408084ca26b"
 authors = ["Jean Michel <jean.michel@imj-prg.fr>"]
-version = "0.2.0"
+version = "0.2.1"
 [compat]
 julia = "1"
 Combinat = "0.0.3, 0.0.4"
