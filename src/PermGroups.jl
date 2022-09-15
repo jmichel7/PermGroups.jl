@@ -81,9 +81,9 @@ julia> rubik_gens=[
   perm"(17,19,24,22)(18,21,23,20)(6,25,43,16)(7,28,42,13)(8,30,41,11)",
   perm"(25,27,32,30)(26,29,31,28)(3,38,43,19)(5,36,45,21)(8,33,48,24)",
   perm"(33,35,40,38)(34,37,39,36)(3,9,46,32)(2,12,47,29)(1,14,48,27)",
-  perm"(41,43,48,46)(42,45,47,44)(14,22,30,38)(15,23,31,39)(16,24,32,40)];
+  perm"(41,43,48,46)(42,45,47,44)(14,22,30,38)(15,23,31,39)(16,24,32,40)"];
 
-julia> @btime length(Group(rubik_gens);type=Int128)
+julia> @btime length(Int128,Group(rubik_gens))
   4.906 ms (104874 allocations: 13.64 MiB)
 43252003274489856000
 ```
@@ -107,18 +107,18 @@ Base.show(io::IO,G::PermGroup)=print(io,"Group(",gens(G),")")
 Base.one(G::PermGroup)=G.one # PermGroups should have fields gens and one
 
 "`largest_moved_point(G::PermGroup)` the largest moved point by any `g∈ G`"
-function Perms.largest_moved_point(G::PermGroup)::Int
+function Perms.largest_moved_point(G::PermGroup)
   get!(G,:largest_moved)do 
     if isempty(gens(G)) return 0 end
     maximum(largest_moved_point.(gens(G)))
-  end
+  end::Int
 end
 
 " `orbits(G::PermGroup)` the orbits of `G` on its moved points."
-function Perms.orbits(G::PermGroup)
+function Perms.orbits(G::PermGroup{T})where T
   get!(G,:orbits)do
     orbits(G,1:largest_moved_point(G);trivial=false)
-  end
+  end::Vector{Vector{Int}}
 end
  
 """
@@ -126,7 +126,7 @@ describe the orbit of Int p under PermGroup G as a Schreier vector v.
 That is, v[p]==-1 and v[k]=i means that k^inv(G(i)) is the antecessor of k
 in the orbit of p.
 """
-function schreier_vector(G::PermGroup,p::Integer;action::Function=^)
+function schreier_vector(G::PermGroup,p::Integer,action::Function=^)
   res=zeros(Int,largest_moved_point(G))
   res[p]=-1
   new=BitSet([p])
@@ -218,8 +218,8 @@ end
 for  `i in  eachindex(base(G))` the  `i`-th element  is the  centralizer of
 `base(G)[1:i-1]`
 """
-function centralizers(G::PermGroup)
-  getp(schreier_sims,G,:centralizers)
+function centralizers(G::PermGroup{T})where T
+  getp(schreier_sims,G,:centralizers)::Vector{<:PermGroup{T}}
 end
 
 """
@@ -228,13 +228,13 @@ end
 returns a list whose `i`-th element is the transversal of
 `G.centralizers[i]` on `G.base[i]`
 """
-function transversals(G::PermGroup{T})::Vector{Dict{T,Perm{T}}} where T
-  getp(schreier_sims,G,:transversals)
+function transversals(G::PermGroup{T})where T
+  getp(schreier_sims,G,:transversals)::Vector{Dict{T,Perm{T}}}
 end
 
 " `base(G::PermGroup)` A `Vector` of points stabilized by no element of `G` "
-function base(G::PermGroup{T})::Vector{T} where T
-  getp(schreier_sims,G,:base)
+function base(G::PermGroup{T})where T
+  getp(schreier_sims,G,:base)::Vector{T}
 end
 
 function Base.in(g::Perm,G::PermGroup)
@@ -247,23 +247,24 @@ function Groups.elements(C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
   sort(orbit(C.G,C.representative))
 end
 
-cycletypes(W::PermGroup,x)=map(o->cycletype(x,domain=o),orbits(W)) # first invariant
-
-function classinv(W::PermGroup)
-  get!(W,:classinv)do
-    cycletypes.(Ref(W),classreps(W))
-  end
+" The cycle types of C on each orbit of C.G"
+function cycletypes(C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
+  get!(C,:cycletypes)do
+    cycletypes(C.G,C.representative)
+  end::Vector{Vector{Int}}
 end
 
-# internal function accepting ambiguity
+cycletypes(W::PermGroup,x)=map(o->cycletype(x,domain=o),orbits(W)) # first invariant
+
+# internal function returning possibly ambiguous result
 function positions_class(W::PermGroup,w)
-  l=findall(==(cycletypes(W,w)),classinv(W))
+  ct=cycletypes(W,w)
+  cl=conjugacy_classes(W)
+  l=findall(C->cycletypes(C)==ct,cl)
   if length(l)==1 return l end
-  if length(centre(W))>1
-    for c in filter(!isone,elements(centre(W)))
-      l=filter(i->cycletypes(W,classreps(W)[i].*c)==cycletypes(W,w*c),l)
-      if length(l)==1 return l end
-    end
+  for c in filter(!isone,elements(center(W)))
+    l=filter(i->cycletypes(W,cl[i].representative.*c)==cycletypes(W,w*c),l)
+    if length(l)==1 return l end
   end
   l
 end
@@ -272,7 +273,7 @@ function Groups.position_class(W::PermGroup,w)
   l=positions_class(W,w)
   if length(l)==1 return only(l) end
   for i in eachindex(l) 
-   if w in conjugacy_classes(W)[l[i]] return l[i] end
+    if w in conjugacy_classes(W)[l[i]] return l[i] end
   end
 end
 
@@ -343,11 +344,13 @@ end
 with  integers of type `type` (use `Int128` or `BigInt` for big permutation
 groups).
 """
-function Base.length(G::PermGroup;type=Int)
-  get!(G,:length)do
-    prod(type.(length.(transversals(G))))
-  end
+function Base.length(::Type{T},G::PermGroup)where T
+  T(get!(G,:length)do
+    prod(T.(length.(transversals(G))))
+  end)
 end
+
+Base.length(G::PermGroup)=length(Int,G)
 
 Base.eltype(::Type{<:PermGroup{T}}) where T=Perm{T}
 
@@ -414,7 +417,7 @@ symmetric_group(n::Int)=Group([Perm(i,i+1) for i in 1:n-1])
 `onmats(m::AbstractMatrix,g::Perm)` simultaneous action of `g` on 
  the columns and rows of `m`.
 """
-onmats(m,g)=m^(g,g)
+onmats(m,g)=permute(m,g,g)
 
 function invblocks(m,extra=nothing)
   if isnothing(extra) extra=zeros(Int,size(m,1)) end
@@ -427,7 +430,7 @@ function invblocks(m,extra=nothing)
   end
 end
 
-# fast method for centralizer(g,M;action=onmats) additionally centralizing extra
+# fast method for centralizer(g,M,onmats) additionally centralizing extra
 function stab_onmats(g::PermGroup{T},M::AbstractMatrix;extra=nothing)where T
 # if length(g)>1
 #   print("g=",
@@ -435,11 +438,11 @@ function stab_onmats(g::PermGroup{T},M::AbstractMatrix;extra=nothing)where T
 #         " M:",size(M))
 # end
   blocks=invblocks(M,extra)
-  for r in blocks g=stabilizer(g,r) end
+  for r in blocks g=stabilizer(g,r,(p,g)->sort(p.^g)) end
   if isempty(gens(g)) return g end
   n=vec(CartesianIndices(M))
   e=Group(map(y->Perm(n,map(x->CartesianIndex(x.I.^y),n)),gens(g)))
-  for s in collectby(vec(M),1:length(M)) e=stabilizer(e,s) end
+  for s in collectby(vec(M),1:length(M)) e=stabilizer(e,s,(p,g)->sort(p.^g)) end
   if isempty(gens(e)) return e end
   Group(map(p->Perm{T}(map(i->n[i^p][1], axes(M,1))), gens(e)))
 end
@@ -449,9 +452,9 @@ end
 
 If  `onmats(m,p)=^(M,p;dims=(1,2))`, and  the argument  `G` is given (which
 should   be  a  `PermGroup`)   this  is  just   a  fast  implementation  of
-`centralizer(G,M;action=onmats)`.  If  `G`  is  omitted  it  is taken to be
+`centralizer(G,M,onmats)`.   If  `G`   is  omitted   it  is   taken  to  be
 `symmetric_group(size(M,1))`.  The  program  uses sophisticated algorithms,
-and can handle matrices up to 80×80. If a list `extra` is given the result
+and  can handle matrices up to 80×80. If a list `extra` is given the result
 centralizes also `extra`.
 
 ```julia-repl
@@ -481,15 +484,15 @@ end
 """
 `Perm_onmats(M, N[, m ,n])` 
 
-If  `onmats(M,p)=^(M,p;dims=(1,2))`, return `p`  such that `onmats(M,p)=N`;
-so is just an efficient version of
-`transporting_elt(symmetric_group(size(M,1)),M,N;action=onmats)`    If   in
-addition the vectors `m` and `n` are given, `p` should satisfy `m^p=n`.
+If    `onmats(M,p)=permute(M,p;dims=(1,2))`,    return    `p`   such   that
+`onmats(M,p)=N`; so is just an efficient version of
+`transporting_elt(symmetric_group(size(M,1)),M,N,onmats)`  If  in  addition
+the vectors `m` and `n` are given, `p` should satisfy `permute(m,p)=n`.
 
 ```julia-repl
 julia> m=(1:30)'.*(1:30).%15;
 
-julia> n=^(m,Perm(1,5,2,8,12,4,7)*Perm(3,9,11,6);dims=(1,2));
+julia> n=permute(m,Perm(1,5,2,8,12,4,7)*Perm(3,9,11,6);dims=(1,2));
 
 julia> Perm_onmats(m,n)
 (1,5,2,8,12,4,7)(3,9,11,6)
@@ -519,16 +522,16 @@ function Perm_onmats(M,N,m=nothing,n=nothing;verbose=false)
       if length(I)>7
         if verbose println("large block size $(length(I))") end
         if length(iM)==1
-          p=transporting_elt(sg(length(I)),M[I,I],N[J,J];
-                action=onmats,dist=(M,N)->sum(x->count(!iszero,x),M-N))
+          p=transporting_elt(sg(length(I)),M[I,I],N[J,J],
+                onmats,dist=(M,N)->sum(x->count(!iszero,x),M-N))
         elseif isnothing(m) p=Perm_onmats(M[I,I],N[J,J])
         else p=Perm_onmats(M[I,I],N[J,J],m[I],n[J])
         end
       else 
-        p=transporting_elt(sg(length(I)),M[I,I],N[J,J],action=onmats)
+        p=transporting_elt(sg(length(I)),M[I,I],N[J,J],onmats)
       end
       if isnothing(p) return false end
-      I^=p
+      I=permute(I,p)
       p=mappingPerm(eachindex(I), I)
       return [I,J,Group(gens(stab_onmats(M[I,I];verbose)).^p)] end, iM, iN)
     if false in p return false else return p end
@@ -547,10 +550,10 @@ function Perm_onmats(M,N,m=nothing,n=nothing;verbose=false)
     h=Group(gens(g).^p)
     if M[I,I]!=N[J,J]
       if verbose print("I==$(length(I)) stab==$(length(g)) ") end
-      e = transporting_elt(h, M[I,I], N[J,J], action=onmats)
-      if isnothing(e) return nothing else I^=e end
+      e = transporting_elt(h, M[I,I], N[J,J], onmats)
+      if isnothing(e) return nothing else I=permute(I,e) end
     end
-    h=centralizer(h, M[I,I], action=onmats)
+    h=centralizer(h, M[I,I], onmats)
     g=Group(gens(h).^inv(p))
   end
   return mappingPerm(I,J)

@@ -15,7 +15,7 @@ Perm(::AbstractMatrix, ::AbstractMatrix)
 @perm_str
 largest_moved_point(::Perm)
 smallest_moved_point
-Base.:^(::AbstractVector,::Perm) 
+permute
 sortPerm
 randPerm
 orbit(::Perm,::Integer)
@@ -26,8 +26,6 @@ cycletype(::Perm)
 support
 sign
 Base.Matrix(::Perm,n)
-Base.:^(::AbstractMatrix,::Perm)
-Base.:^(::AbstractMatrix,::Tuple{Perm,Perm})
 restricted(::Perm,::AbstractVector{<:Integer})
 reflength(::Perm)
 mappingPerm
@@ -44,9 +42,8 @@ Groups.orbits(::Group, ::Any)
 elements(::Group)
 transversal
 words_transversal
-centralizer(::Group,::Any)
-centralizer(::Group,::Group)
-centre
+centralizer
+center
 stabilizer
 normalizer
 word(::Group,::Any)

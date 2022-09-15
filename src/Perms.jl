@@ -120,7 +120,7 @@ module Perms
 
 export restricted, orbit, orbits, order, Perm, largest_moved_point, cycles,
   cycletype, support, @perm_str, smallest_moved_point, reflength,
-  mappingPerm, sortPerm, Perm_rowcol, randPerm
+  mappingPerm, sortPerm, Perm_rowcol, randPerm, permute
 
 using Combinat: tally, collectby, arrangements
 
@@ -418,13 +418,13 @@ Base.:^(a::Perm, n::Integer)=n>=0 ? Base.power_by_squaring(a,n) :
                                     Base.power_by_squaring(inv(a),-n)
 
 """
-`Base.:^(l::AbstractVector,p::Perm)` 
+`permute(l::AbstractVector,p::Perm)` 
 
 returns `l` permuted by `p`, a vector `r` such that `r[i^p]==l[i]`
 
 # Examples
 ```julia-repl
-julia> [5,4,6,1,7,5]^Perm(1,3,5,6,4)
+julia> permute([5,4,6,1,7,5],Perm(1,3,5,6,4))
 6-element Vector{Int64}:
  1
  4
@@ -434,17 +434,22 @@ julia> [5,4,6,1,7,5]^Perm(1,3,5,6,4)
  7
 ```
 
-note that we follow here the convention for the GAP function `Permuted`, but
-this has the consequence that `sort(a)==a^inv(Perm(sortperm(a)))`.
+note  that we follow  here the convention  for the GAP function `Permuted`,
+which  makes `^` into an action  (that is, `(l^p)^q==l^(p*q)`, but this has
+the consequence that `sort(a)==a^inv(Perm(sortperm(a)))`.
 """
-function Base.:^(l::AbstractVector,a::Perm)
+function permute(l::AbstractVector,a::Perm)
   res=similar(l)
 @inbounds for i in eachindex(l) res[i^a]=l[i] end
   res
 end
 
+function Base.:^(l::AbstractVector,a::Perm)
+  error("**** using old form\n")
+end
+
 """
-`Base.:^(m::AbstractMatrix,p::Perm;dims=1)`
+`permute(m::AbstractMatrix,p::Perm;dims=1)`
 
 Applies the permutation `p` on the lines, columns or both of the matrix `m`
 depending on the value of `dims`
@@ -459,37 +464,36 @@ julia> m=[3*i+j for i in 0:2,j in 1:3]
 julia> p=Perm(1,2,3)
 (1,2,3)
 
-julia> m^p
+julia> permute(m,p)
 3×3 Matrix{Int64}:
  7  8  9
  1  2  3
  4  5  6
 
-julia> ^(m,p;dims=2)
+julia> permute(m,p;dims=2)
 3×3 Matrix{Int64}:
  3  1  2
  6  4  5
  9  7  8
 
-julia> ^(m,p;dims=(1,2))
+julia> permute(m,p;dims=(1,2))
 3×3 Matrix{Int64}:
  9  7  8
  3  1  2
  6  4  5
 ```
 """
-function Base.:^(m::AbstractMatrix,a::Perm;dims=1)
-  if dims==2 m[:,axes(m,2)^a]
-  elseif dims==1 m[axes(m,1)^a,:]
-  elseif dims==(1,2) m[axes(m,1)^a,axes(m,2)^a]
+function permute(m::AbstractMatrix,a::Perm;dims=1)
+  if dims==2 m[:,permute(axes(m,2),a)]
+  elseif dims==1 m[permute(axes(m,1),a),:]
+  elseif dims==(1,2) m[permute(axes(m,1),a),permute(axes(m,2),a)]
   end
 end
 
 """
-`Base.:^(m::AbstractMatrix,p::Tuple{Perm,Perm})`
+`permute(m::AbstractMatrix,p1::Perm,p2::Perm)
 
-given  a tuple `(p1,p2)` of  `Perm`s, applies `p1` to  the lines of `m` and
-`p2` to the columns of `m`.
+permutes the lines of `m` by `p1` and the columns of `m` by `p2`.
 
 ```julia-repl
 julia> m=[1 2 3;4 5 6;7 8 9]
@@ -498,14 +502,14 @@ julia> m=[1 2 3;4 5 6;7 8 9]
  4  5  6
  7  8  9
 
-julia> m^(Perm(1,2),Perm(2,3))
+julia> permute(m,Perm(1,2),Perm(2,3))
 3×3 Matrix{Int64}:
  4  6  5
  1  3  2
  7  9  8
 ```
 """
-Base.:^(m::AbstractMatrix,p::Tuple{Perm,Perm})=m[axes(m,1)^p[1],axes(m,2)^p[2]]
+permute(m::AbstractMatrix,p1::Perm,p2::Perm)=m[permute(axes(m,1),p1),permute(axes(m,2),p2)]
 #---------------------- cycles -------------------------
 
 # 20% slower than GAP CyclePermInt for randPerm(1000)
@@ -724,8 +728,8 @@ mappingPerm(a,b)=mappingPerm(Idef,a,b)
 whether `m1` is conjugate to `m2` by row/col permutations.
 
 `m1` and `m2` should be rectangular matrices of the same size. The function
-returns a pair of permutations `(p1,p2)` such that `m1^(p1,p2)==m2` if such
-permutations exist, `nothing` otherwise.
+returns  a pair of permutations  `p1,p2` such that `permute(m1,p1,p2)==m2`
+if such permutations exist, `nothing` otherwise.
 
 The entries of `m1` and `m2` must be sortable.
 
@@ -749,7 +753,7 @@ julia> b=[1 -1 -1 1 1; 1 1 -1 -1 1; 1 -1 1 -1 1; 2 0 0 0 -2; 1 1 1 1 1]
 julia> p1,p2=Perm_rowcol(a,b)
 ((1,2,4,5,3), (3,5,4))
 
-julia> a^(p1,p2)==b
+julia> permute(a,p1,p2)==b
 true
 ```
 """
@@ -773,7 +777,7 @@ function Perm_rowcol(m1::AbstractMatrix, m2::AbstractMatrix;debug=false)
                            crg[3-dim]), g)
           p=mappingPerm(vcat(collectby(invar,g)...), g)
           rcperm[dim][i]*=p
-          mm[i]=^(mm[i],p,dims=dim)
+          mm[i]=permute(mm[i],p,dims=dim)
           sort!(invar)
         end
         if invars[1]!=invars[2] return nothing end
@@ -788,11 +792,11 @@ function Perm_rowcol(m1::AbstractMatrix, m2::AbstractMatrix;debug=false)
     d=dist(mm[1], mm[2], dim, l)
 #   if debug print("l=",l,"\n") end
     for e in mappingPerm.(arrangements(l,length(l)))
-      m=dist(^(mm[1], e;dims=dim), mm[2], dim, l)
+      m=dist(permute(mm[1], e;dims=dim), mm[2], dim, l)
       if m<d
         if debug print("\n",("rows","cols")[dim],l,":$d->",m) end
         rcperm[dim][1]*=e
-        mm[1]=^(mm[1],e;dims=dim)
+        mm[1]=permute(mm[1],e;dims=dim)
         return true
       end
     end

@@ -38,20 +38,22 @@ more and more efficient methods.
 
 for  further information on  the functions defined  in this module, look at
 the  docstrings of `Group,  gens, ngens, comm,  orbit, orbits, transversal,
-words_transversal,  centralizer,  stabilizer,  centre,  normalizer,  words,
+words_transversal,  centralizer,  stabilizer,  center,  normalizer,  words,
 minimal_words,   word,  in,   elements,  length,   order,  conjugacy_class,
 conjugacy_classes, classreps, nconjugacy_classes, fusion_conjugacy_classes,
 position_class,  isabelian,  iscyclic,  istrivial,  rand, transporting_elt,
 intersect, Hom, kernel, Coset`
 """
 module Groups
-export Group, centralizer, centre, classreps, comm, commutator, order, 
-  gens, ngens, ordergens, fusion_conjugacy_classes,
+export Group, centralizer, center, classreps, comm, commutator, order, 
+  gens, generators, ngens, number_of_generators, ordergens, 
+  fusion_conjugacy_classes,
   conjugacy_class, conjugacy_classes, Coset, NormalCoset,
   Hom, isabelian, iscyclic, istrivial, words, minimal_words, 
-  nconjugacy_classes, normalizer, orbit, orbits, position_class, 
-  stabilizer, transporting_elt, transversal, words_transversal,
-  word, elements, kernel, getp, @GapObj, ConjugacyClass
+  nconjugacy_classes, number_of_conjugacy_classes, normalizer, orbit, orbits, 
+  position_class, stabilizer, transporting_elt, transporting_element, 
+  transversal, words_transversal, word, elements, kernel, ConjugacyClass,
+  getp, @GapObj
 
 import ..Perms: orbit, orbits, order # suppress if used as indep. package
 #--------------------------------------------------------------------------
@@ -125,11 +127,13 @@ end
 "`one(G::Group)` returns the identity element of `G`."
 Base.one(G::Group{T}) where T=one(T)
 
-"`gens(G::Group)` returns the `Vector` of generators of `G`."
-gens(G::Group)=G.gens
+"`gens(G::Group)` or `generators(G::Group)` is the `Vector` of generators of `G`."
+generators(G::Group)=G.gens
+const gens=generators
 
-"`ngens(G::Group)` returns the number of generators of `G`."
-ngens(G::Group)=length(gens(G))
+"`ngens(G::Group)` or `number_of_generators(G::Group)` is the number of generators of `G`."
+number_of_generators(G::Group)=length(gens(G))
+const ngens=number_of_generators
 
 """
 `(G::Group)(i...)`
@@ -158,9 +162,9 @@ comm(a,b)=inv(a)*inv(b)*a*b
 commutator(a,b)=comm(a,b)
 
 """
-`orbit(gens::AbstractVector,p;action::Function=^)`
+`orbit(gens::AbstractVector,p,action::Function=^)`
 
-`orbit(G::Group,p;action::Function=^)`
+`orbit(G::Group,p,action::Function=^)`
 
 the orbit of point `p` under repeated action of generators `gens`. The type
 of  point `p` should be hashable. The  default action of a group element is
@@ -176,7 +180,7 @@ julia> orbit([Perm(1,2),Perm(2,3)],1)
  2
  3
 
-julia> orbit([Perm(1,2),Perm(2,3)],[1,3];action=(v,g)->v.^g) # Gap "OnTuples"
+julia> orbit([Perm(1,2),Perm(2,3)],[1,3],(v,g)->v.^g) # Gap "OnTuples"
 6-element Vector{Vector{Int64}}:
  [1, 3]
  [2, 3]
@@ -185,14 +189,14 @@ julia> orbit([Perm(1,2),Perm(2,3)],[1,3];action=(v,g)->v.^g) # Gap "OnTuples"
  [2, 1]
  [3, 1]
 
-julia> orbit([Perm(1,2),Perm(2,3)],[1,3];action=(v,g)->sort(v.^g)) # "OnSets"
+julia> orbit([Perm(1,2),Perm(2,3)],[1,3],(v,g)->sort(v.^g)) # "OnSets"
 3-element Vector{Vector{Int64}}:
  [1, 3]
  [2, 3]
  [1, 2]
 ```
 """
-function orbit(gens::AbstractVector,pnt;action::F=^) where F<:Function
+function orbit(gens::AbstractVector,pnt,action::F=^) where F<:Function
   set=Set([pnt])
   orb=[pnt]
   for pnt in orb, gen in gens
@@ -205,12 +209,12 @@ function orbit(gens::AbstractVector,pnt;action::F=^) where F<:Function
   orb
 end
 
-orbit(G::Group,pnt;action::F=^) where F<:Function=orbit(gens(G),pnt;action)
+orbit(G::Group,pnt,action::F=^) where F<:Function=orbit(gens(G),pnt,action)
 
 """
-`transversal(G::Group,p;action::Function=^)`
+`transversal(G::Group,p,action::Function=^)`
 
-returns  a `Dict` `t` with keys  `orbit(G,p;action)` and where `t[x]` is an
+returns  a `Dict` `t` with keys  `orbit(G,p,action)` and where `t[x]` is an
 element  of  `G`  such  that  `x==action(p,t[x])`.  Like  `orbit`,  it thus
 requires the type of `p` to be hashable.
 
@@ -225,7 +229,7 @@ Dict{Int64, Perm{Int16}} with 3 entries:
 orbit functions can take any action of `G` as keyword argument
 
 ```julia-repl
-julia> transversal(G,(1,2),action=(x,y)->x.^y)
+julia> transversal(G,(1,2),(x,y)->x.^y)
 Dict{Tuple{Int64, Int64}, Perm{Int16}} with 6 entries:
   (3, 2) => (1,3)
   (1, 2) => ()
@@ -235,7 +239,7 @@ Dict{Tuple{Int64, Int64}, Perm{Int16}} with 6 entries:
   (2, 3) => (1,2,3)
 ```
 """
-function transversal(G::Group,pnt;action::F=^) where F<:Function
+function transversal(G::Group,pnt,action::F=^) where F<:Function
   trans=Dict(pnt=>one(G))
   orb=[pnt]
   for pnt in orb, gen in gens(G)
@@ -249,10 +253,10 @@ function transversal(G::Group,pnt;action::F=^) where F<:Function
 end
 
 """
-`words_transversal(gens,p;action::Function=^)`
+`words_transversal(gens,p,action::Function=^)`
 
 A   transversal   recording   words.   returns   a  `Dict`  `t`  with  keys
-`orbit(G,p;action)`  and where  `t[x]` is  a `w`  is a sequence of integers
+`orbit(G,p,action)`  and where  `t[x]` is  a `w`  is a sequence of integers
 such that `x==action(p,G(w...))`
 
 ```julia-repl
@@ -263,7 +267,7 @@ Dict{Int64, Vector{Int64}} with 3 entries:
   1 => []
 ```
 """
-function words_transversal(gens,pnt;action::F=^) where F<:Function
+function words_transversal(gens,pnt,action::F=^) where F<:Function
   trans=Dict(pnt=>Int[])
   orb=[pnt]
   for pnt in orb, i in eachindex(gens)
@@ -277,10 +281,10 @@ function words_transversal(gens,pnt;action::F=^) where F<:Function
   trans
 end
 
-function orbits(gens::AbstractVector,v::AbstractVector;action=^,trivial=true)
+function orbits(gens::AbstractVector,v::AbstractVector,action=^;trivial=true)
   res=Vector{eltype(v)}[]
   while !isempty(v)
-    o=orbit(gens,first(v);action)
+    o=orbit(gens,first(v),action)
     if length(o)>1 || trivial push!(res,o) end
     v=setdiff(v,o)
   end
@@ -288,9 +292,9 @@ function orbits(gens::AbstractVector,v::AbstractVector;action=^,trivial=true)
 end
 
 """
-`orbits(gens::Vector,v;action=^,trivial=true)`
+`orbits(gens::Vector,v,action=^;trivial=true)`
 
-`orbits(G,v;action=^,trivial=true)`
+`orbits(G,v,action=^;trivial=true)`
     
 the  orbits on `v`  of the repeated  action of `gens`;  the elements of `v`
 should  be hashable. If a  group is given instead  of generators, the orbit
@@ -305,10 +309,10 @@ julia> orbits(G,1:4)
  [4]
 ```
 """
-orbits(G::Group,v;action=^,trivial=true)=orbits(gens(G),v;action,trivial)
+orbits(G::Group,v,action=^;trivial=true)=orbits(gens(G),v,action;trivial)
 
 """
-`centralizer(G::Group,p;action=^)`
+`centralizer(G::Group,p,action=^)`
 
 computes  the subgroup of elements `g` of `G` such that `action(p,g)==p`.
 
@@ -318,11 +322,8 @@ julia> centralizer(G,1)
 Group([(2,3)])
 ```
 """
-function centralizer(G::Group,p;action::Function=^)
-  t=transversal(G,p;action)
-  if length(t)==1 return G end
-  C=[wx*s/t[action(x,s)] for (x,wx) in t for s in gens(G)] #Schreier generators
-  Group(unique!(sort(C)))
+function centralizer(G::Group,p,action::Function=^)
+  stabilizer(G,p,action)
 end
 
 """
@@ -335,43 +336,46 @@ julia> centralizer(G,Group([Perm(1,2)]))
 Group([(1,2)])
 ```
 """
-centralizer(G::Group,H::Group)=centralizer(G,gens(H);action=(x,s)->x.^s)
+centralizer(G::Group,H::Group)=centralizer(G,gens(H),(x,s)->x.^s)
 
 """
-`stabilizer(G::Group,s)`
+`stabilizer(G::Group,s,action=^)`
 
-Assume that `s` is a set, represented as a sorted list without repetitions.
-The  action  of  `g∈  G`  on  sets  is  given  by  `(g,p)->sort(p.^g)`. The
-*stabilizer* of `s` in `G` is the centralizer of `s` for that action.
+computes  the subgroup of elements `g` of `G` such that `action(p,g)==p`.
 
 ```julia-repl
 julia> G=Group([Perm(1,2),Perm(1,2,3,4)])
 Group([(1,2), (1,2,3,4)])
-
-julia> centralizer(G,[1,2];action=(s,g)->sort(s.^g))
-Group([(3,4), (1,2), (1,2)(3,4)])
-
-julia> stabilizer(G,[1,2])
+```
+Assume that `s` is a set, represented as a sorted list without repetitions.
+The  action  of  `g∈  G`  on  sets  is  given  by  `(g,p)->sort(p.^g)`.
+```julia-repl
+julia> stabilizer(G,[1,2],(s,g)->sort(s.^g))
 Group([(3,4), (1,2), (1,2)(3,4)])
 ```
 """
-stabilizer(G::Group,p)=centralizer(G,p;action=(s,g)->sort(s.^g))
+function stabilizer(G::Group,p,action=^)
+  t=transversal(G,p,action)
+  if length(t)==1 return G end
+  C=[wx*s/t[action(x,s)] for (x,wx) in t for s in gens(G)] #Schreier generators
+  Group(unique!(sort(C)))
+end
 
 """
-`center(G::Group)` the centre of `G`
+`center(G::Group)` the center of `G`
 
 ```julia-repl
 julia> G=Group([Perm(1,2),Perm(3,4),Perm(1,3)*Perm(2,4)])
 Group([(1,2), (3,4), (1,3)(2,4)])
 
-julia> centre(G)
+julia> center(G)
 Group([(1,2)(3,4)])
 ```
 """
-function centre(G::Group)
-  get!(G,:centre) do
+function center(G::Group{T})where T
+  get!(G,:center) do
     centralizer(G,G)
-  end
+  end::Group{T}
 end
 
 """
@@ -392,10 +396,10 @@ Dict{Perm{Int16}, Vector{Int64}} with 6 entries:
   (1,3,2) => [2, 2]
 ```
 """
-function minimal_words(G::Group)
+function minimal_words(G::Group{T})where T
   get!(G,:minwords)do
-    words_transversal(gens(G),one(G);action=(x,y)->x*y)
-  end
+    words_transversal(gens(G),one(G),(x,y)->x*y)
+  end::Dict{T,Vector{Int}}
 end
 
 """
@@ -417,7 +421,7 @@ Dict{Perm{Int16}, Vector{Int64}} with 6 entries:
   (1,3,2) => [1, 2, 1]
 ```
 """
-function words(G::Group)
+function words(G::Group{T})where T
   get!(G,:words)do
     words=Dict(one(G)=>Int[])
     for i in eachindex(gens(G))
@@ -437,11 +441,12 @@ function words(G::Group)
       words = nwords
     end
     words
-  end
+  end::Dict{T,Vector{Int}}
 end
 
 # returns Dict: (word w, n0 generator such that l(w/G(n0))<l(w)
-function words2(G::Group) # faster than words but longer to retrieve word
+# faster than words but longer to retrieve word
+function words2(G::Group{T})where T
   get!(G,:words2)do
     words=Dict(one(G)=>0)
     for i in eachindex(gens(G))
@@ -460,7 +465,7 @@ function words2(G::Group) # faster than words but longer to retrieve word
       words = nwords
     end
     words
-  end
+  end::Dict{T,Int}
 end
 
 "`word(G::Group,w)` a minimal word in `gens(G)` representing element `w` of `G`"
@@ -485,11 +490,20 @@ end
 "`x in G` for `G` a group: whether `x` is an element of `G`"
 Base.in(w,G::Group)=haskey(words2(G),w)
 
-"`length(G::Group)` the number of elements of G"
+"""
+`length(G::Group)` the number of elements of `G`.
+
+`length(T,G)` do the computation with the integer type `T`.
+"""
 Base.length(G::Group)=length(words2(G))
 
-"`order(G::Group)` the number of elements of G"
+"""
+`order(G::Group)` the number of elements of `G`.
+
+`order(T,G)` do the computation with the integer type `T`.
+"""
 order(G::Group)=length(G)
+order(::Type{T},G::Group) where T=length(T,G)
 
 @GapObj struct ConjugacyClass{T,TW} 
   G::TW
@@ -504,7 +518,7 @@ end
 `conjugacy_classes(G::Group)` conjugacy classes of `G` 
 (as a `Vector{ConjugacyClass}`)
 """
-function conjugacy_classes(G::Group)
+function conjugacy_classes(G::Group{T})where T
   get!(G,:classes) do
     if haskey(G,:classreps) 
       [ConjugacyClass(G,x,Dict{Symbol,Any}()) for x in G.classreps]
@@ -517,15 +531,15 @@ function conjugacy_classes(G::Group)
   end
 end
 
-elements(C::ConjugacyClass)=
+elements(C::ConjugacyClass{T}) where T=
   get!(C,:elements)do 
     orbit(C.G,C.representative)
-  end
+  end::Vector{T}
 
 Base.in(x,C::ConjugacyClass)=x in elements(C)
 
 "`conjugacy_class(G::Group,g)` the class of `g`"
-conjugacy_class(G::Group,g)=conjugacy_class(G,position_class(G,g))
+conjugacy_class(G::Group,g)=conjugacy_classes(G)[position_class(G,g)]
 
 "`position_class(G::Group,g)` index of conjugacy class to which `g` belongs"
 function position_class(G::Group,g)
@@ -550,12 +564,12 @@ end
 representatives of conjugacy classes of `G`. Fills `G.classreps`. If this
 field is filled it is used by  `conjugacy_classes`.
 """
-function classreps(G::Group{T})::Vector{T} where T
+function classreps(G::Group{T}) where T
   get!(G,:classreps) do
     if length(G)>10000 error("length(G)=",length(G),": should call Gap4")
     else getp(conjugacy_classes,G,:classreps)
     end
-  end
+  end::Vector{T}
 end
 
 "`nconjugacy_classes(G::Group)` the number of conjugacy classes of `G`"
@@ -572,7 +586,7 @@ function order(a)# default method
   end
 end
 
-ordergens(W)=get!(()->order.(gens(W)),W,:ordergens)
+ordergens(W)=get!(()->order.(gens(W)),W,:ordergens)::Vector{Int}
 
 "`isabelian(G::Group)` whether `G` is abelian"
 isabelian(W::Group)=all(x*y==y*x for x in gens(W), y in gens(W))
@@ -591,7 +605,8 @@ function Base.rand(W::Group)
 end
 
 """
-`transporting_elt(G,p,q;action=^)`   
+`transporting_elt(G,p,q,action=^)`    or
+`transporting_element(G,p,q,action=^)`   
 
 returns  an  element  `g∈  G`  such  that  `p^g==q` (or `action(p,g)==q` if
 `action` is given), if such a `g` exists, and nothing otherwise. The set of
@@ -606,16 +621,16 @@ julia> transporting_elt(g,1,5)
 
 julia> transporting_elt(g,1,6)
 
-julia> transporting_elt(g,[1,2,3,4],[2,3,4,5];action=(s,g)->sort(s.^g))
+julia> transporting_elt(g,[1,2,3,4],[2,3,4,5],(s,g)->sort(s.^g))
 (1,2,3,4,5)(6,7,8)
 
-julia> transporting_elt(g,[1,2,3,4],[3,4,5,2];action=(s,g)->s.^g)
+julia> transporting_elt(g,[1,2,3,4],[3,4,5,2],(s,g)->s.^g)
 ```
 """
-function transporting_elt(W::Group,x,y;action=^,dist=nothing,verbose=false)
+function transporting_element(W::Group,x,y,action=^;dist=nothing,verbose=false)
   if isnothing(dist)
     if x==y return one(W) end
-    t=transversal(W,x;action=action)
+    t=transversal(W,x,action)
     if haskey(t,y) return t[y] else return nothing end
   end
   p=one(W)
@@ -640,6 +655,8 @@ function transporting_elt(W::Group,x,y;action=^,dist=nothing,verbose=false)
     end
   end
 end
+
+const transporting_elt=transporting_element
 
 # suppress unneeded generators
 function weedgens(G::Group)
@@ -820,31 +837,18 @@ Base.one(C::NormalCoset)=NormalCoset(Group(C))
 # assume H is normal and there is a function NormalCoset
 Base.:/(W::Group,H::Group)=Group(unique(map(x->NormalCoset(H,x),gens(W))),NormalCoset(H))
 
-function classreps(G::NormalCoset{Group{T}})::Vector{T} where T
+function classreps(G::NormalCoset{Group{T}}) where T
   get!(G,:classreps) do
     first.(conjugacy_classes(G))
-  end
+  end::Vector{T}
 end
 
 nconjugacy_classes(G::NormalCoset)=length(classreps(G))
 
-function conjugacy_classes(G::Group)
-  get!(G,:classes) do
-    if haskey(G,:classreps) 
-      [ConjugacyClass(G,x,Dict{Symbol,Any}()) for x in G.classreps]
-    else res=orbits(G,elements(G))
-      # assumes l sortable
-      res=map(l->ConjugacyClass(G,minimum(l),Dict{Symbol,Any}(:elements=>sort(l))),res)
-      G.classreps=getproperty.(res,:representative)
-      res
-    end
-  end
-end
-
 function elements(C::ConjugacyClass{T,TW})where {T,TW<:Coset}
   get!(C,:elements)do 
     orbit(Group(C.G),C.representative)
-  end
+  end::Vector{T}
 end
 
 function conjugacy_classes(G::NormalCoset)
