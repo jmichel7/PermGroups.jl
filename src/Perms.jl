@@ -350,7 +350,10 @@ function Base.:(==)(a::Perm, b::Perm)
 end
 
 " `largest_moved_point(a::Perm)` is the largest integer moved by a"
-largest_moved_point(a::Perm)=findlast(x->a.d[x]!=x,eachindex(a.d))
+function largest_moved_point(a::Perm)
+  p=findlast(x->a.d[x]!=x,eachindex(a.d))
+  isnothing(p) ? 0 : p
+end
 
 " `smallest_moved_point(a::Perm)` is the smallest integer moved by a"
 smallest_moved_point(a::Perm)=findfirst(x->a.d[x]!=x,eachindex(a.d))

@@ -248,21 +248,23 @@ function Groups.elements(C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
 end
 
 " The cycle types of C on each orbit of C.G"
-function cycletypes(C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
+function cycletypes(C::ConjugacyClass{T,TW})where{T,TW<:Union{PermGroup,NormalCoset{<:Perm,<:Group}}}
   get!(C,:cycletypes)do
     cycletypes(C.G,C.representative)
   end::Vector{Vector{Int}}
 end
 
-cycletypes(W::PermGroup,x)=map(o->cycletype(x,domain=o),orbits(W)) # first invariant
+cycletypes(W::Union{PermGroup,NormalCoset{<:Perm,<:Group}},x)=map(o->cycletype(x,domain=o),orbits(W)) # first invariant
 
 # internal function returning possibly ambiguous result
-function positions_class(W::PermGroup,w)
+function positions_class(W::Union{PermGroup,NormalCoset{<:Perm,<:Group}},w)
   ct=cycletypes(W,w)
   cl=conjugacy_classes(W)
   l=findall(C->cycletypes(C)==ct,cl)
   if length(l)==1 return l end
-  for c in filter(!isone,elements(center(W)))
+  if W isa Coset Z=centralizer(center(Group(W)),W.phi)
+  else Z=center(W) end
+  for c in filter(!isone,elements(Z))
     l=filter(i->cycletypes(W,cl[i].representative.*c)==cycletypes(W,w*c),l)
     if length(l)==1 return l end
   end
@@ -396,6 +398,19 @@ end
 # the next def will make quotient groups work
 function Groups.NormalCoset(W::PermGroup,phi::Perm=one(W))
   Groups.NormalCosetof(reduced(W,phi),W,Dict{Symbol,Any}())
+end
+
+function Perms.largest_moved_point(G::NormalCoset{<:Perm,<:Group})
+  get!(G,:largest_moved)do 
+    max(largest_moved_point(Group(G)),largest_moved_point(G.phi))
+  end::Int
+end
+
+function Perms.orbits(G::NormalCoset{<:Perm,<:Group})
+  get!(G,:orbits)do
+    v=vcat([G.phi],gens(Group(G)))
+    orbits(v,1:largest_moved_point(G);trivial=false)
+  end::Vector{Vector{Int}}
 end
 
 #-------------------------- now a concrete type-------------------------
