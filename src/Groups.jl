@@ -9,7 +9,7 @@ This module gives some basic functionality on groups.
   
 # Examples
 ```julia-repl
-julia> G=Group([Perm(1,2),Perm(1,2,3)])
+julia> G=Group(Perm(1,2),Perm(1,2,3))
 Group([(1,2), (1,2,3)])
 
 julia> gens(G)
@@ -34,7 +34,7 @@ There  is a constructor of a group with arbitrary type elements, `Group(l)`
 where  `l isa AbstractVector{T}` constructs a `Groupof{T}` which knows only
 the general methods in this module. The examples above use
 `Group(AbstractVector{<:Perm})`  which constructs  a `PermGroup`  which has
-more and more efficient methods.
+more efficient methods.
 
 for  further information on  the functions defined  in this module, look at
 the  docstrings of `Group,  gens, ngens, comm,  orbit, orbits, transversal,
@@ -144,7 +144,7 @@ specified  indices. An argument  can also be  negative, then the inverse of
 the corresponding generator is used.
 
 ```julia-repl
-julia> G=Group([Perm(1,2),Perm(1,2,3)])
+julia> G=Group(Perm(1,2),Perm(1,2,3))
 Group([(1,2), (1,2,3)])
 
 julia> G(2,1,-2) # returns gens(G)[2]*gens(G)[1]/gens(G)[2]
@@ -219,7 +219,7 @@ element  of  `G`  such  that  `x==action(p,t[x])`.  Like  `orbit`,  it thus
 requires the type of `p` to be hashable.
 
 ```julia-repl
-julia> G=Group([Perm(1,2),Perm(2,3)]);
+julia> G=Group(Perm(1,2),Perm(2,3));
 julia> transversal(G,1)
 Dict{Int64, Perm{Int16}} with 3 entries:
   2 => (1,2)
@@ -256,8 +256,8 @@ end
 `words_transversal(gens,p,action::Function=^)`
 
 A   transversal   recording   words.   returns   a  `Dict`  `t`  with  keys
-`orbit(G,p,action)`  and where  `t[x]` is  a `w`  is a sequence of integers
-such that `x==action(p,G(w...))`
+`orbit(G,p,action)`  and where `t[x]`  is a sequence  of integers such that
+`x==action(p,G(t[x]...))`
 
 ```julia-repl
 julia> words_transversal([Perm(1,2),Perm(2,3)],1)
@@ -302,7 +302,7 @@ under  `gens(G)` is returned. If `trivial=false` the one-element orbits are
 not returned.
 
 ```julia-repl
-julia> G=Group([Perm(1,2),Perm(2,3)]);
+julia> G=Group(Perm(1,2),Perm(2,3));
 julia> orbits(G,1:4)
 2-element Vector{Vector{Int64}}:
  [1, 2, 3]
@@ -317,7 +317,7 @@ orbits(G::Group,v,action=^;trivial=true)=orbits(gens(G),v,action;trivial)
 computes  the subgroup of elements `g` of `G` such that `action(p,g)==p`.
 
 ```julia-repl
-julia> G=Group([Perm(1,2),Perm(1,2,3)]);
+julia> G=Group(Perm(1,2),Perm(1,2,3));
 julia> centralizer(G,1)
 Group([(2,3)])
 ```
@@ -329,10 +329,10 @@ end
 """
 `centralizer(G::Group,H::Group)` the centralizer in `G` of the group `H`
 ```julia-repl
-julia> G=Group([Perm(1,2),Perm(1,2,3)])
+julia> G=Group(Perm(1,2),Perm(1,2,3))
 Group([(1,2), (1,2,3)])
 
-julia> centralizer(G,Group([Perm(1,2)]))
+julia> centralizer(G,Group(Perm(1,2)))
 Group([(1,2)])
 ```
 """
@@ -344,7 +344,7 @@ centralizer(G::Group,H::Group)=centralizer(G,gens(H),(x,s)->x.^s)
 computes  the subgroup of elements `g` of `G` such that `action(p,g)==p`.
 
 ```julia-repl
-julia> G=Group([Perm(1,2),Perm(1,2,3,4)])
+julia> G=Group(Perm(1,2),Perm(1,2,3,4))
 Group([(1,2), (1,2,3,4)])
 ```
 Assume that `s` is a set, represented as a sorted list without repetitions.
@@ -365,7 +365,7 @@ end
 `center(G::Group)` the center of `G`
 
 ```julia-repl
-julia> G=Group([Perm(1,2),Perm(3,4),Perm(1,3)*Perm(2,4)])
+julia> G=Group(Perm(1,2),Perm(3,4),Perm(1,3)*Perm(2,4))
 Group([(1,2), (3,4), (1,3)(2,4)])
 
 julia> center(G)
@@ -385,7 +385,7 @@ returns  a `Dict` giving for each element of `G` a minimal positive word in
 the generators representing it.
 
 ```julia-repl
-julia> G=Group([Perm(1,2),Perm(1,2,3)]);
+julia> G=Group(Perm(1,2),Perm(1,2,3));
 julia> minimal_words(G)
 Dict{Perm{Int16}, Vector{Int64}} with 6 entries:
   ()      => []
@@ -410,7 +410,7 @@ generators representing it. It is faster than `minimal_words` but the words
 are not guaranteed minimal.
 
 ```julia-repl
-julia> G=Group([Perm(1,2),Perm(1,2,3)]);
+julia> G=Group(Perm(1,2),Perm(1,2,3));
 julia> words(G)
 Dict{Perm{Int16}, Vector{Int64}} with 6 entries:
   ()      => []
@@ -692,10 +692,10 @@ builds an object representing the homomorphism from `S` to `T` which maps
 `gens(S)` to `images`.
 
 ```julia-repl
-julia> S=Group([Perm(1,2),Perm(2,3)])
+julia> S=Group(Perm(1,2),Perm(2,3))
 Group([(1,2), (2,3)])
 
-julia> T=Group([Perm(1,2)])
+julia> T=Group(Perm(1,2))
 Group([(1,2)])
 
 julia> h=Hom(S,T,[T(1),T(1)])

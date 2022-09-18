@@ -257,50 +257,6 @@ function Perm{T}(m::AbstractMatrix{<:Integer}) where T<:Integer
   Perm{T}(l)
 end
 
-"""
-  `Perm{T}(l::AbstractVector,l1::AbstractVector)`
-
-returns `p`, a `Perm{T}`, such that `l1^p==l` if such a `p` exists; returns
-`nothing` otherwise. If not given `{T}` is taken to be `{$Idef}`. Needs the
-elements of `l` and `l1` to be sortable.
-
-```julia-repl
-julia> Perm([0,2,4],[4,0,2])
-(1,3,2)
-```
-"""
-function Perm{T}(l::AbstractVector,l1::AbstractVector)where T<:Integer
-  p=sortperm(l)
-  p1=sortperm(l1)
-@inbounds if view(l,p)==view(l1,p1) Perm{T}(p1)\Perm{T}(p) end
-end
-
-Perm(l::AbstractVector,l1::AbstractVector)=Perm{Idef}(l,l1)
-
-"""
-  `Perm{T}(m::AbstractMatrix,m1::AbstractMatrix;dims=1)`
-
-returns  `p`, a `Perm{T}`, which  permutes the rows of  `m1` (the coluns of
-`m1`  if `dims=2`)  to bring  them to  those of  `m`, if such a `p` exists;
-returns  `nothing` otherwise. If not given  `{T}` is taken to be `{$Idef}`.
-Needs the elements of `m` and `m1` to be sortable.
-
-```julia-repl
-julia> Perm([0 1 0;0 0 1;1 0 0],[1 0 0;0 1 0;0 0 1];dims=1)
-(1,3,2)
-
-julia> Perm([0 1 0;0 0 1;1 0 0],[1 0 0;0 1 0;0 0 1];dims=2)
-(1,2,3)
-```
-"""
-function Perm{T}(l::AbstractMatrix,l1::AbstractMatrix;dims=1)where T<:Integer
-  if     dims==1 Perm{T}(collect(eachrow(l)),collect(eachrow(l1)))
-  elseif dims==2 Perm{T}(collect(eachcol(l)),collect(eachcol(l1)))
-  end
-end
-
-Perm(l::AbstractMatrix,l1::AbstractMatrix;dims=1)=Perm{Idef}(l,l1,dims=dims)
-
 #---------------------------------------------------------------------
 Base.one(p::Perm)=Perm(empty(p.d))
 Base.one(::Type{Perm{T}}) where T=Perm(T[])
@@ -425,7 +381,6 @@ Base.:^(a::Perm, n::Integer)=n>=0 ? Base.power_by_squaring(a,n) :
 
 returns `l` permuted by `p`, a vector `r` such that `r[i^p]==l[i]`
 
-# Examples
 ```julia-repl
 julia> permute([5,4,6,1,7,5],Perm(1,3,5,6,4))
 6-element Vector{Int64}:
@@ -436,10 +391,9 @@ julia> permute([5,4,6,1,7,5],Perm(1,3,5,6,4))
  6
  7
 ```
-
-note  that we follow  here the convention  for the GAP function `Permuted`,
-which  makes `^` into an action  (that is, `(l^p)^q==l^(p*q)`, but this has
-the consequence that `sort(a)==a^inv(Perm(sortperm(a)))`.
+note   that  `permute`   is  defined   such  it   is  an  action  that  is,
+`permute(permute(l,p),q)==permute(l,p*q)` but this has the consequence that
+`sort(a)==a^inv(Perm(sortperm(a)))`.
 """
 function permute(l::AbstractVector,a::Perm)
   res=similar(l)
@@ -454,8 +408,8 @@ end
 """
 `permute(m::AbstractMatrix,p::Perm;dims=1)`
 
-Applies the permutation `p` on the lines, columns or both of the matrix `m`
-depending on the value of `dims`
+permutes  by `p` the rows, columns or  both of the matrix `m` depending on
+the value of `dims`.
 
 ```julia-repl
 julia> m=[3*i+j for i in 0:2,j in 1:3]
@@ -494,9 +448,9 @@ function permute(m::AbstractMatrix,a::Perm;dims=1)
 end
 
 """
-`permute(m::AbstractMatrix,p1::Perm,p2::Perm)
+`permute(m::AbstractMatrix, p1::Perm,p2::Perm)`
 
-permutes the lines of `m` by `p1` and the columns of `m` by `p2`.
+permutes the rows of `m` by `p1` and the columns of `m` by `p2`.
 
 ```julia-repl
 julia> m=[1 2 3;4 5 6;7 8 9]
@@ -517,7 +471,7 @@ permute(m::AbstractMatrix,p1::Perm,p2::Perm)=m[permute(axes(m,1),p1),permute(axe
 
 # 20% slower than GAP CyclePermInt for randPerm(1000)
 """
-  orbit(a::Perm,i::Integer) returns the orbit of a on i
+`orbit(a::Perm,i::Integer)` returns the orbit of `a` on `i`.
 """
 function orbit(a::Perm,i::Integer)
   res=empty(a.d)
@@ -619,9 +573,9 @@ julia> cycletype(Perm(1,2)*Perm(4,5);trivial=true,domain=1:6)
 function cycletype(a::Perm;domain=1:length(a.d),trivial=false)
   lengths=Int[]
   if isempty(domain) return lengths end
-  to_visit=falses(max(length(a.d),maximum(domain)))
-@inbounds  to_visit[domain].=true
-  for i in eachindex(to_visit)
+  to_visit=fill(false,max(length(a.d),maximum(domain)))
+@inbounds to_visit[domain].=true
+@inbounds for i in eachindex(to_visit)
     if !to_visit[i] continue end
     j=i
     l=0
@@ -636,10 +590,24 @@ function cycletype(a::Perm;domain=1:length(a.d),trivial=false)
   sort(lengths,rev=true)
 end
 
-"""
-`order(a::Perm)` is the order of the permutation a
-"""
-order(a::Perm)=lcm(cycletype(a))
+function order(a::Perm)
+  ord=1
+  to_visit=fill(true,length(a.d))
+@inbounds for i in eachindex(to_visit)
+    if to_visit[i]
+      j=i
+      l=0
+      while true
+        l+=1
+        to_visit[j]=false
+        j=a.d[j]
+        if j==i break end
+      end
+      if l>1 ord=lcm(ord,l) end
+    end
+  end
+  ord
+end
 
 """
 `reflength(a::Perm)`
@@ -725,16 +693,36 @@ function mappingPerm(::Type{T},a,b)where T
 end
 mappingPerm(a,b)=mappingPerm(Idef,a,b)
 
+#------------------- constructor from 2 objects -------------------------
+"""
+  `Perm{T}(l::AbstractVector,l1::AbstractVector)`
+
+returns  `p`,  a  `Perm{T}`,  such  that  `permute(l1,p)==l`  if such a `p`
+exists;  returns `nothing`  otherwise. If  not given  `{T}` is  taken to be
+`{$Idef}`. Needs the `eltype` of `l` and `l1` to be sortable.
+
+```julia-repl
+julia> Perm([0,2,4],[4,0,2])
+(1,3,2)
+```
+"""
+function Perm{T}(l::AbstractVector,l1::AbstractVector)where T<:Integer
+  p=sortperm(l)
+  p1=sortperm(l1)
+@inbounds if view(l,p)==view(l1,p1) Perm{T}(p1)\Perm{T}(p) end
+end
+
+Perm(l::AbstractVector,l1::AbstractVector)=Perm{Idef}(l,l1)
+
 """
 `Perm_rowcol(m1::AbstractMatrix, m2::AbstractMatrix)`
 
-whether `m1` is conjugate to `m2` by row/col permutations.
+whether `m1` can be obtained from `m2` by row/col permutations.
 
 `m1` and `m2` should be rectangular matrices of the same size. The function
-returns  a pair of permutations  `p1,p2` such that `permute(m1,p1,p2)==m2`
-if such permutations exist, `nothing` otherwise.
-
-The entries of `m1` and `m2` must be sortable.
+returns a `Tuple` of permutations `(p1,p2)` such that
+`permute(m1,p1,p2)==m2`  if such  permutations exist,  `nothing` otherwise.
+The `eltype` of `m1` and `m2` must be sortable.
 
 ```julia-repl
 julia> a=[1 1 1 -1 -1; 2 0 -2 0 0; 1 -1 1 -1 1; 1 1 1 1 1; 1 -1 1 1 -1]

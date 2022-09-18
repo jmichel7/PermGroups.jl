@@ -3,7 +3,6 @@ This  module is a port  of some GAP functionality  on permutation groups. A
 `PermGroup` is a `Group` where `gens` are `Perm`s. It depends on the modules
 `Groups` and `Perms` which could be independent packages on their own.
 
-# Examples
 ```julia-repl
 julia> G=Group([Perm(i,i+1) for i in 1:2])
 Group([(1,2), (2,3)])
@@ -30,10 +29,10 @@ true
 
 julia> Perm(1,2,4) in G
 false
-
-# `elements`,  `in` test and  other functions are  computed on `G` using
-# Schreier-Sims theory, that is computing the following
-
+```
+`elements`,   `in`  and   other  functions   are  computed   on  `G`  using
+Schreier-Sims theory, that is computing the following
+```julia-repl
 julia> base(G) # a list of points that no element of G fixes
 2-element Vector{Int16}:
  1
@@ -50,7 +49,6 @@ julia> transversals(G)
  Dict(2 => (1,2), 3 => (1,3,2), 1 => ())
  Dict(2 => (), 3 => (2,3))
 ```
-
 The  code refers  to the  Handbook of  computational group theory, by Holt,
 Eick,  O'Brien, chapter 4  for basic algorithms  on permutation groups. See
 the docstrings for `base, transversals, centralizers` for more details.
@@ -59,7 +57,7 @@ There are efficient methods for `PermGroups` for the functions `in, length,
 elements,   position_class`.  The  function   `on_classes`  determines  the
 permutation  of the conjugacy classes effected by an automorphism. Finally,
 we   give  application  to  the  group   of  simultaneous  row  and  column
-permutations of a matrix: see `onmats, stab_onmats, Perm_onmats`.
+permutations of a matrix: see `onmats, stab_onmats, Perm`.
 
 finally, benchmarks on julia 1.8
 ```benchmark
@@ -69,12 +67,9 @@ julia> @btime collect(symmetric_group(8));
 julia> @btime words(symmetric_group(8));
   7.155 ms (86019 allocations: 11.00 MiB)
   
-julia> @btime elements(symmetric_group(8));
+julia> @btime elements(symmetric_group(8)); # Gap takes 8 ms
   1.565 ms (49539 allocations: 3.71 MiB)
-```
-Gap `Elements(SymmetricGroup(8))` takes 8 ms
 
-```benchmark
 julia> rubik_gens=[
   perm"(1,3,8,6)(2,5,7,4)(9,33,25,17)(10,34,26,18)(11,35,27,19)",
   perm"(9,11,16,14)(10,13,15,12)(1,17,41,40)(4,20,44,37)(6,22,46,35)",
@@ -83,12 +78,12 @@ julia> rubik_gens=[
   perm"(33,35,40,38)(34,37,39,36)(3,9,46,32)(2,12,47,29)(1,14,48,27)",
   perm"(41,43,48,46)(42,45,47,44)(14,22,30,38)(15,23,31,39)(16,24,32,40)"];
 
-julia> @btime length(Int128,Group(rubik_gens))
+julia> @btime length(Int128,Group(rubik_gens)) # Gap takes 5ms
   4.906 ms (104874 allocations: 13.64 MiB)
 43252003274489856000
 ```
-Note  the use of  `type=` in `length`:  the computation does  not fit in an
-`Int64`. GAP takes about the same time to compute the size of the group.
+Note  the use of  `Int128` in `length`:  the computation does  not fit in an
+`Int64`.
 """
 module PermGroups
 using Reexport
@@ -96,7 +91,7 @@ include("Perms.jl"); @reexport using .Perms
 include("Groups.jl"); @reexport using .Groups
 using Combinat: tally, collectby
 export PermGroup, base, transversals, centralizers, symmetric_group, reduced,
-  stab_onmats, Perm_onmats, onmats, on_classes
+  stab_onmats, onmats, on_classes
 #-------------------- now permutation groups -------------------------
 abstract type PermGroup{T}<:Group{Perm{T}} end
 
@@ -248,16 +243,17 @@ function Groups.elements(C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
 end
 
 " The cycle types of C on each orbit of C.G"
-function cycletypes(C::ConjugacyClass{T,TW})where{T,TW<:Union{PermGroup,NormalCoset{<:Perm,<:Group}}}
+function cycletypes(C::ConjugacyClass{T,TW})where{T,TW<:Union{Group{<:Perm},NormalCoset{<:Perm,<:Group}}}
   get!(C,:cycletypes)do
     cycletypes(C.G,C.representative)
   end::Vector{Vector{Int}}
 end
 
-cycletypes(W::Union{PermGroup,NormalCoset{<:Perm,<:Group}},x)=map(o->cycletype(x,domain=o),orbits(W)) # first invariant
+cycletypes(W::Union{Group{<:Perm},NormalCoset{<:Perm,<:Group}},x)=
+  map(o->cycletype(x,domain=o,trivial=true),orbits(W)) # first invariant
 
 # internal function returning possibly ambiguous result
-function positions_class(W::Union{PermGroup,NormalCoset{<:Perm,<:Group}},w)
+function positions_class(W::Union{Group{<:Perm},NormalCoset{<:Perm,<:Group}},w)
   ct=cycletypes(W,w)
   cl=conjugacy_classes(W)
   l=findall(C->cycletypes(C)==ct,cl)
@@ -374,13 +370,15 @@ end
 
 # elements is twice faster than collect(G), should not be
 function Groups.elements(G::PermGroup)
-  t=reverse(sort.(collect.(values.(transversals(G)))))
-  if isempty(t) return [one(G)] end
-  res=t[1]
-  for i in 2:length(t)
-    res=vcat(map(x->res.*x,t[i])...)
-  end
-  res
+  get!(G,:elements)do
+    t=reverse(sort.(collect.(values.(transversals(G)))))
+    if isempty(t) return [one(G)] end
+    res=t[1]
+    for i in 2:length(t)
+      res=vcat(map(x->res.*x,t[i])...)
+    end
+    res
+   end::Vector{eltype(G)}
 end
 
 #------------------------- cosets for PermGroups -----------------------
@@ -429,8 +427,8 @@ symmetric_group(n::Int)=Group([Perm(i,i+1) for i in 1:n-1])
 
 #---------------- application to matrices ------------------------------
 """
-`onmats(m::AbstractMatrix,g::Perm)` simultaneous action of `g` on 
- the columns and rows of `m`.
+`onmats(m::AbstractMatrix,g::Perm)` synonym for `permute(m,g;dims=(1,2))`
+or `permute(m,g,g)`.
 """
 onmats(m,g)=permute(m,g,g)
 
@@ -499,19 +497,10 @@ end
 """
 `Perm_onmats(M, N[, m ,n])` 
 
-If    `onmats(M,p)=permute(M,p;dims=(1,2))`,    return    `p`   such   that
-`onmats(M,p)=N`; so is just an efficient version of
+returns `p` such that `onmats(M,p)=N` if it exists, `nothing` otherwise; so
+is just an efficient version of
 `transporting_elt(symmetric_group(size(M,1)),M,N,onmats)`  If  in  addition
 the vectors `m` and `n` are given, `p` should satisfy `permute(m,p)=n`.
-
-```julia-repl
-julia> m=(1:30)'.*(1:30).%15;
-
-julia> n=permute(m,Perm(1,5,2,8,12,4,7)*Perm(3,9,11,6);dims=(1,2));
-
-julia> Perm_onmats(m,n)
-(1,5,2,8,12,4,7)(3,9,11,6)
-```
 """
 function Perm_onmats(M,N,m=nothing,n=nothing;verbose=false)
   if isnothing(m) && M==N return Perm() end
@@ -573,5 +562,38 @@ function Perm_onmats(M,N,m=nothing,n=nothing;verbose=false)
   end
   return mappingPerm(I,J)
 end
+
+"""
+  `Perm{T}(m::AbstractMatrix,m1::AbstractMatrix;dims=1)`
+
+returns  `p`, a `Perm{T}`, which permutes the  rows of `m1` (the columns of
+`m1`  if `dims=2`, simultaneously the rows  and columns if `dims=(1,2)`) to
+bring  them  to  those  of  `m`,  if  such  a `p` exists; returns `nothing`
+otherwise.  If not given `{T}` is taken to be `{Int16}`. Needs the elements
+of `m` and `m1` to be sortable.
+
+```julia-repl
+julia> Perm([0 1 0;0 0 1;1 0 0],[1 0 0;0 1 0;0 0 1];dims=1)
+(1,3,2)
+
+julia> Perm([0 1 0;0 0 1;1 0 0],[1 0 0;0 1 0;0 0 1];dims=2)
+(1,2,3)
+
+julia> m=(1:30)'.*(1:30).%15;
+
+julia> n=permute(m,Perm(1,5,2,8,12,4,7)*Perm(3,9,11,6);dims=(1,2));
+
+julia> Perm(m,n,dims=(1,2))
+(1,5,2,8,12,4,7)(3,9,11,6)
+```
+"""
+function Perms.Perm{T}(m::AbstractMatrix,m1::AbstractMatrix;dims=1)where T<:Integer
+  if     dims==1 Perm{T}(collect(eachrow(m)),collect(eachrow(m1)))
+  elseif dims==2 Perm{T}(collect(eachcol(m)),collect(eachcol(m1)))
+  elseif dims==(1,2) Perm_onmats(m,m1)
+  end
+end
+
+Perms.Perm(m::AbstractMatrix,m1::AbstractMatrix;dims=1)=Perm{Perms.Idef}(m,m1,dims=dims)
 
 end
