@@ -522,19 +522,20 @@ function conjugacy_classes(G::Group{T})where T
   get!(G,:classes) do
     if haskey(G,:classreps) 
       [ConjugacyClass(G,x,Dict{Symbol,Any}()) for x in G.classreps]
-    else res=orbits(G,elements(G))
+    else 
+      if length(G)>10000 error("length(G)=",length(G),": should call Gap4") end
+      res=orbits(G,elements(G))
       # assumes l sortable
-      res=map(l->ConjugacyClass(G,minimum(l),Dict{Symbol,Any}(:elements=>sort(l))),res)
-      G.classreps=getproperty.(res,:representative)
-      res
+      map(l->ConjugacyClass(G,minimum(l),Dict{Symbol,Any}(:elements=>sort(l))),res)
     end
   end
 end
 
-elements(C::ConjugacyClass{T}) where T=
+function elements(C::ConjugacyClass{T}) where T
   get!(C,:elements)do 
     orbit(C.G,C.representative)
   end::Vector{T}
+end
 
 Base.in(x,C::ConjugacyClass)=x in elements(C)
 
@@ -566,9 +567,7 @@ field is filled it is used by  `conjugacy_classes`.
 """
 function classreps(G::Group{T}) where T
   get!(G,:classreps) do
-    if length(G)>10000 error("length(G)=",length(G),": should call Gap4")
-    else getp(conjugacy_classes,G,:classreps)
-    end
+    getproperty.(conjugacy_classes(G),:representative)
   end::Vector{T}
 end
 
@@ -839,7 +838,7 @@ Base.:/(W::Group,H::Group)=Group(unique(map(x->NormalCoset(H,x),gens(W))),Normal
 
 function classreps(G::NormalCoset{Group{T}}) where T
   get!(G,:classreps) do
-    first.(conjugacy_classes(G))
+    getproperty.(conjugacy_classes(G),:representative)
   end::Vector{T}
 end
 
