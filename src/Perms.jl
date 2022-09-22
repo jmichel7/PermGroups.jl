@@ -500,7 +500,7 @@ julia> orbits(Perm(1,2)*Perm(4,5),1:5)
 """
 function orbits(a::Perm,domain=1:length(a.d);trivial=true)
   cycles=Vector{eltype(a.d)}[]
-  if isempty(a.d) return cycles end
+  if length(domain)==0 return cycles end
   to_visit=falses(max(length(a.d),maximum(domain)))
 @inbounds  to_visit[domain].=true
   for i in eachindex(to_visit)
