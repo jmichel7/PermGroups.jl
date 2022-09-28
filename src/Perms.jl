@@ -1,6 +1,6 @@
 """
 This package implements permutations and some functions of them. It depends
-only  on  the  package  `Combinat` (which itself depends on `Primes`). 
+only  on  the  package  `Combinat` (which itself depends on `Primes`).
 
 This  package  follows  the  design  of  permutations  in the GAP language.
 `Perm`s  are permutations  of the  set `1:n`,  represented internally  as a
@@ -119,7 +119,8 @@ method   `arrangements`  from   `Combinat`  or   iterate  the  elements  of
 module Perms
 
 export restricted, orbit, orbits, order, Perm, largest_moved_point, cycles,
-  cycletype, support, @perm_str, smallest_moved_point, reflength,
+  cycletype, support, @perm_str, smallest_moved_point,
+  reflength, reflection_length,
   mappingPerm, sortPerm, Perm_rowcol, randPerm, permute
 
 using Combinat: tally, collectby, arrangements
@@ -213,7 +214,7 @@ function Base.typed_hvcat(::Type{Perm},a::Tuple{Vararg{Int,N} where N},
 end
 
 """
-`Matrix(a::Perm,n=length(a.d))` 
+`Matrix(a::Perm,n=length(a.d))`
 the  permutation matrix  for `a`  operating on  `n` points (by default, the
 degree of `a`). If given, `n` should be larger than `largest_moved_point(a)`.
 
@@ -249,7 +250,7 @@ Perm(m::AbstractMatrix{<:Integer})=Perm{Idef}(m)
 
 function Perm{T}(m::AbstractMatrix{<:Integer}) where T<:Integer
   if size(m,1)!=size(m,2) error("matrix should be square") end
-  if any(x->count(!iszero,x)!=1,eachrow(m)) 
+  if any(x->count(!iszero,x)!=1,eachrow(m))
     error("not a permutation matrix")
   end
   l=map(x->findfirst(!iszero,x),eachrow(m))
@@ -371,13 +372,13 @@ end
 Base.:/(a::Perm, b::Perm)=a*inv(b)
 
 @inline Base.:^(n::Integer, a::Perm{T}) where T=
-  n>length(a.d) ? T(n) : @inbounds a.d[n] 
+  n>length(a.d) ? T(n) : @inbounds a.d[n]
 
 Base.:^(a::Perm, n::Integer)=n>=0 ? Base.power_by_squaring(a,n) :
                                     Base.power_by_squaring(inv(a),-n)
 
 """
-`permute(l::AbstractVector,p::Perm)` 
+`permute(l::AbstractVector,p::Perm)`
 
 returns `l` permuted by `p`, a vector `r` such that `r[i^p]==l[i]`
 
@@ -393,7 +394,8 @@ julia> permute([5,4,6,1,7,5],Perm(1,3,5,6,4))
 ```
 note   that  `permute`   is  defined   such  it   is  an  action  that  is,
 `permute(permute(l,p),q)==permute(l,p*q)` but this has the consequence that
-`sort(a)==a^inv(Perm(sortperm(a)))`.
+`sort(a)==permute(a,inv(Perm(sortperm(a))))` and that
+`invpermute!(l,vec(p))` changes `l` to `permute(l,p)`.
 """
 function permute(l::AbstractVector,a::Perm)
   res=similar(l)
@@ -483,9 +485,9 @@ function orbit(a::Perm,i::Integer)
     if j==i return res end
   end
 end
-  
+
 """
-`orbits(a::Perm,d::Vector=1:length(a.d))` 
+`orbits(a::Perm,d::Vector=1:length(a.d))`
 
 returns the orbits of `a` on domain `d`
 
@@ -610,12 +612,14 @@ function order(a::Perm)
 end
 
 """
-`reflength(a::Perm)`
+`reflection_length(a::Perm)` or `reflength`
 
-is   the  "reflection   length"  of   `a`,  that   is,  minimum  number  of
-transpositions of which `a` is the product
+gives  the  "reflection  length"  of  `a`  (when the symmetric group on `n`
+points to which `a` belongs is interpreted as a reflection group on a space
+of  dimension `n`), that is, the  minimum number of transpositions of which
+`a` is the product.
 """
-function reflength(a::Perm)
+function reflection_length(a::Perm)
   to_visit=trues(length(a.d))
   l=0
   for i in eachindex(to_visit)
@@ -630,6 +634,8 @@ function reflength(a::Perm)
   end
   l
 end
+
+const reflength=reflection_length
 
 " `sign(a::Perm)` is the signature of  the permutation `a`"
 Base.sign(a::Perm)=(-1)^reflength(a)

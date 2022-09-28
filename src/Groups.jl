@@ -4,9 +4,9 @@ This module gives some basic functionality on groups.
 `Group`  is  an  abstract  type,  but  the  following is assumed of a group
 `G` of one of its concrete implementations:
 
-  - The function `gens(G)` returns the list of generators of `G`. 
+  - The function `gens(G)` returns the list of generators of `G`.
   - The function `one(G)` returns the identity element of `G`.
-  
+
 # Examples
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(1,2,3))
@@ -14,7 +14,7 @@ Group([(1,2), (1,2,3)])
 
 julia> gens(G)
 2-element Vector{Perm{Int16}}:
- (1,2)  
+ (1,2)
  (1,2,3)
 
 julia> ngens(G)
@@ -45,13 +45,19 @@ position_class,  isabelian,  iscyclic,  istrivial,  rand, transporting_elt,
 intersect, Hom, kernel, Coset`
 """
 module Groups
-export Group, centralizer, center, classreps, comm, commutator, order, 
-  gens, generators, ngens, number_of_generators, ordergens, 
+export Group, centralizer, center, order,
+  classreps, class_representatives,
+  comm, commutator,
+  gens, generators,
+  ngens, number_of_generators,
+  nconjugacy_classes, number_of_conjugacy_classes,
+  ordergens, orders_of_generators,
+  transporting_elt, transporting_element,
   fusion_conjugacy_classes,
   conjugacy_class, conjugacy_classes, Coset, NormalCoset,
-  Hom, isabelian, iscyclic, istrivial, words, minimal_words, 
-  nconjugacy_classes, number_of_conjugacy_classes, normalizer, orbit, orbits, 
-  position_class, stabilizer, transporting_elt, transporting_element, 
+  Hom, isabelian, iscyclic, istrivial, words, minimal_words,
+  normalizer, orbit, orbits,
+  position_class, stabilizer,
   transversal, words_transversal, word, elements, kernel, ConjugacyClass,
   getp, @GapObj
 
@@ -108,7 +114,7 @@ macro GapObj(e)
   end
   esc(Expr(:block,
    e,
-   :(Base.getproperty(o::$T,s::Symbol)=hasfield($T,s) ? getfield(o,s) : 
+   :(Base.getproperty(o::$T,s::Symbol)=hasfield($T,s) ? getfield(o,s) :
          getfield(o,:prop)[s]),
    :(Base.setproperty!(o::$T,s::Symbol,v)=getfield(o,:prop)[s]=v),
    :(Base.haskey(o::$T,s::Symbol)=haskey(getfield(o,:prop),s)),
@@ -127,8 +133,10 @@ end
 "`one(G::Group)` returns the identity element of `G`."
 Base.one(G::Group{T}) where T=one(T)
 
+Base.eltype(G::Group{T}) where T=T
+
 "`gens(G::Group)` or `generators(G::Group)` is the `Vector` of generators of `G`."
-generators(G::Group)=G.gens
+generators(G::Group)=G.gens #by default assume a concrete group has a field gens
 const gens=generators
 
 "`ngens(G::Group)` or `number_of_generators(G::Group)` is the number of generators of `G`."
@@ -174,7 +182,7 @@ conjugate  `inv(g)*h*g`. If  a group  is given  instead of  generators, the
 orbit under `gens(G)` is returned.
 
 ```julia-repl
-julia> orbit([Perm(1,2),Perm(2,3)],1) 
+julia> orbit([Perm(1,2),Perm(2,3)],1)
 3-element Vector{Int64}:
  1
  2
@@ -295,7 +303,7 @@ end
 `orbits(gens::Vector,v,action=^;trivial=true)`
 
 `orbits(G,v,action=^;trivial=true)`
-    
+
 the  orbits on `v`  of the repeated  action of `gens`;  the elements of `v`
 should  be hashable. If a  group is given instead  of generators, the orbit
 under  `gens(G)` is returned. If `trivial=false` the one-element orbits are
@@ -505,7 +513,7 @@ Base.length(G::Group)=length(words2(G))
 order(G::Group)=length(G)
 order(::Type{T},G::Group) where T=length(T,G)
 
-@GapObj struct ConjugacyClass{T,TW} 
+@GapObj struct ConjugacyClass{T,TW}
   G::TW
   representative::T
 end
@@ -515,14 +523,14 @@ function Base.show(io::IO,C::ConjugacyClass)
 end
 
 """
-`conjugacy_classes(G::Group)` conjugacy classes of `G` 
+`conjugacy_classes(G::Group)` conjugacy classes of `G`
 (as a `Vector{ConjugacyClass}`)
 """
 function conjugacy_classes(G::Group{T})where T
   get!(G,:classes) do
-    if haskey(G,:classreps) 
+    if haskey(G,:classreps)
       [ConjugacyClass(G,x,Dict{Symbol,Any}()) for x in G.classreps]
-    else 
+    else
       if length(G)>10000 error("length(G)=",length(G),": should call Gap4") end
       res=orbits(G,elements(G))
       # assumes l sortable
@@ -532,7 +540,7 @@ function conjugacy_classes(G::Group{T})where T
 end
 
 function elements(C::ConjugacyClass{T}) where T
-  get!(C,:elements)do 
+  get!(C,:elements)do
     orbit(C.G,C.representative)
   end::Vector{T}
 end
@@ -560,10 +568,11 @@ function fusion_conjugacy_classes(H::Group,G::Group)
 end
 
 """
-`classreps(G::Group)` 
+`class_representatives(G::Group)`  or `classreps`
 
-representatives of conjugacy classes of `G`. Fills `G.classreps`. If this
-field is filled it is used by  `conjugacy_classes`.
+representatives  of  conjugacy  classes  of  `G`.  By  default  queries the
+attribute  `G.classreps`, and if this attribute  is present it will be used
+by `conjugacy_classes`.
 """
 function classreps(G::Group{T}) where T
   get!(G,:classreps) do
@@ -571,8 +580,13 @@ function classreps(G::Group{T}) where T
   end::Vector{T}
 end
 
-"`nconjugacy_classes(G::Group)` the number of conjugacy classes of `G`"
-nconjugacy_classes(G::Group)=length(conjugacy_classes(G))
+"""
+`number_of_conjugacy_classes(G::Group)` or `nconjugacy_classes`
+
+the number of conjugacy classes of `G`"
+"""
+number_of_conjugacy_classes(G::Group)=length(conjugacy_classes(G))
+const nconjugacy_classes=number_of_conjugacy_classes
 
 "`order(a)` the smallest integer `i≥1` such that `isone(a^i)`"
 function order(a)# default method
@@ -585,7 +599,14 @@ function order(a)# default method
   end
 end
 
-ordergens(W)=get!(()->order.(gens(W)),W,:ordergens)::Vector{Int}
+"""
+`orders_of_generators(G::Group)` or `ordergens`
+
+The list of orders of the generators (this may be expensive to compute
+so could be worth being cached in `G`).
+"""
+orders_of_generators(W)=get!(()->order.(gens(W)),W,:ordergens)::Vector{Int}
+const ordergens=orders_of_generators
 
 "`isabelian(G::Group)` whether `G` is abelian"
 isabelian(W::Group)=all(x*y==y*x for x in gens(W), y in gens(W))
@@ -605,7 +626,7 @@ end
 
 """
 `transporting_elt(G,p,q,action=^)`    or
-`transporting_element(G,p,q,action=^)`   
+`transporting_element(G,p,q,action=^)`
 
 returns  an  element  `g∈  G`  such  that  `p^g==q` (or `action(p,g)==q` if
 `action` is given), if such a `g` exists, and nothing otherwise. The set of
@@ -642,7 +663,7 @@ function transporting_element(W::Group,x,y,action=^;dist=nothing,verbose=false)
       return p
     end
     dmin=minimum(map(g->(dist(action(x1, g), y),g),gens(W)))
-    if dmin[1]<prev 
+    if dmin[1]<prev
       if verbose print("->",dmin) end
       p*=dmin[2]
       x1=action(x1,dmin[2])
@@ -721,7 +742,7 @@ end
 "`kernel(h::Hom)` the kernel of the homomorphism `h`"
 function kernel(h::Hom)
   if all(isone,h.images) return h.source
-  elseif length(h.source)==length(Group(h.images)) 
+  elseif length(h.source)==length(Group(h.images))
     return Group(empty(gens(h.source)),one(h.source))
   elseif length(h.source)<1000
     return Group(filter(x->isone(h(x)),elements(h.source)))
@@ -845,14 +866,14 @@ end
 nconjugacy_classes(G::NormalCoset)=length(classreps(G))
 
 function elements(C::ConjugacyClass{T,TW})where {T,TW<:Coset}
-  get!(C,:elements)do 
+  get!(C,:elements)do
     orbit(Group(C.G),C.representative)
   end::Vector{T}
 end
 
 function conjugacy_classes(G::NormalCoset)
   get!(G,:classes) do
-    if haskey(G,:classreps) 
+    if haskey(G,:classreps)
       [ConjugacyClass(G,x,Dict{Symbol,Any}()) for x in G.classreps]
     else res=orbits(Group(G),elements(G))
       res=map(l->ConjugacyClass(G,minimum(l),Dict{Symbol,Any}(:elements=>sort(l))),res)

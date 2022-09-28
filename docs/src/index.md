@@ -37,6 +37,7 @@ Groups
 Group
 gens
 ngens
+orders_of_generators
 Groups.orbit(::AbstractVector, ::Any)
 Groups.orbits(::Group, ::Any)
 elements(::Group)
@@ -80,5 +81,5 @@ on_classes
 symmetric_group
 onmats
 stab_onmats
-Perm_onmats
+PermGroups.ProdIterator
 ```

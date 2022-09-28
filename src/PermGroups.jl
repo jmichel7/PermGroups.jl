@@ -8,7 +8,7 @@ julia> G=Group([Perm(i,i+1) for i in 1:2])
 Group([(1,2), (2,3)])
 
 # PermGroups are iterators over their elements
-julia> collect(G)  
+julia> collect(G)
 6-element Vector{Perm{Int16}}:
  (1,2)
  (1,3,2)
@@ -66,7 +66,7 @@ julia> @btime collect(symmetric_group(8));
 
 julia> @btime words(symmetric_group(8));
   7.155 ms (86019 allocations: 11.00 MiB)
-  
+
 julia> @btime elements(symmetric_group(8)); # Gap takes 8 ms
   1.565 ms (49539 allocations: 3.71 MiB)
 
@@ -103,7 +103,7 @@ Base.one(G::PermGroup)=G.one # PermGroups should have fields gens and one
 
 "`largest_moved_point(G::PermGroup)` the largest moved point by any `g∈ G`"
 function Perms.largest_moved_point(G::PermGroup)
-  get!(G,:largest_moved)do 
+  get!(G,:largest_moved)do
     if isempty(gens(G)) return 0 end
     maximum(largest_moved_point.(gens(G)))
   end::Int
@@ -115,7 +115,7 @@ function Perms.orbits(G::PermGroup{T})where T
     orbits(G,1:largest_moved_point(G);trivial=false)
   end::Vector{Vector{Int}}
 end
- 
+
 """
 describe the orbit of Int p under PermGroup G as a Schreier vector v.
 That is, v[p]==-1 and v[k]=i means that k^inv(G(i)) is the antecessor of k
@@ -208,7 +208,7 @@ function schreier_sims(G::PermGroup{T})where T
 end
 
 """
-`centralizers(G::PermGroup)`  
+`centralizers(G::PermGroup)`
 
 for  `i in  eachindex(base(G))` the  `i`-th element  is the  centralizer of
 `base(G)[1:i-1]`
@@ -270,7 +270,7 @@ end
 function Groups.position_class(W::PermGroup,w)
   l=positions_class(W,w)
   if length(l)==1 return only(l) end
-  for i in eachindex(l) 
+  for i in eachindex(l)
     if w in conjugacy_classes(W)[l[i]] return l[i] end
   end
 end
@@ -298,7 +298,14 @@ function Base.in(C::ConjugacyClass{T,TW},w::T)where{T,TW<:PermGroup}
 end
 
 #-------------- iteration on product of lists of group elements ---------------
-# if iterators=[i1,...,in] iterate on all products i1[j1]*...*in[jn]
+"""
+A  `ProdIterator([i₁,…,iₙ])`  takes  a  list  `i₁,…,iₙ`  of  iterators  and
+iterates  on all the products `i₁[j₁]*…*iₙ[jₙ]`  (where the inner loop `jₙ`
+runs  the  fastest).  It  tries  to  be  fast  by re-using partial products
+`i₁[j₁]*…*iₖ[jₖ]` for `k<n`.
+
+It is used internally for iterating over a permutation group.
+"""
 struct ProdIterator{T}
   iterators::Vector{T}
 end
@@ -319,7 +326,7 @@ function Base.iterate(I::ProdIterator)
     n*=first(u)
     push!(state, (n,last(u)))
   end
-  return n,state 
+  return n,state
 end
 
 function Base.iterate(I::ProdIterator,state)
@@ -349,8 +356,6 @@ function Base.length(::Type{T},G::PermGroup)where T
 end
 
 Base.length(G::PermGroup)=length(Int,G)
-
-Base.eltype(::Type{<:PermGroup{T}}) where T=Perm{T}
 
 # iterating I directly is 25% faster unfortunately
 function Base.iterate(G::PermGroup{T}) where T
@@ -399,7 +404,7 @@ function Groups.NormalCoset(W::PermGroup,phi::Perm=one(W))
 end
 
 function Perms.largest_moved_point(G::NormalCoset{<:Perm,<:Group})
-  get!(G,:largest_moved)do 
+  get!(G,:largest_moved)do
     max(largest_moved_point(Group(G)),largest_moved_point(G.phi))
   end::Int
 end
@@ -495,7 +500,7 @@ function stab_onmats(M::AbstractMatrix;extra=nothing,verbose=false)
 end
 
 """
-`Perm_onmats(M, N[, m ,n])` 
+`Perm_onmats(M, N[, m ,n])`
 
 returns `p` such that `onmats(M,p)=N` if it exists, `nothing` otherwise; so
 is just an efficient version of
@@ -531,7 +536,7 @@ function Perm_onmats(M,N,m=nothing,n=nothing;verbose=false)
         elseif isnothing(m) p=Perm_onmats(M[I,I],N[J,J])
         else p=Perm_onmats(M[I,I],N[J,J],m[I],n[J])
         end
-      else 
+      else
         p=transporting_elt(sg(length(I)),M[I,I],N[J,J],onmats)
       end
       if isnothing(p) return false end
