@@ -345,7 +345,12 @@ julia> centralizer(G,Group(Perm(1,2)))
 Group([(1,2)])
 ```
 """
-centralizer(G::Group,H::Group)=centralizer(G,gens(H),(x,s)->x.^s)
+function centralizer(G::Group,H::Group)
+# centralizer(G,gens(H),(x,s)->x.^s) much slower than next for PermGroups
+  C=G
+  for g in gens(H) C=centralizer(C,g) end
+  C
+end
 
 """
 `stabilizer(G::Group,s,action=^)`
