@@ -59,6 +59,7 @@ export Group, centralizer, center, order,
   normalizer, orbit, orbits,
   position_class, stabilizer,
   transversal, words_transversal, word, elements, kernel, ConjugacyClass,
+  ontuples,onsets,
   getp, @GapObj
 
 import ..Perms: orbit, orbits, order # suppress if used as indep. package
@@ -169,6 +170,9 @@ end
 comm(a,b)=inv(a)*inv(b)*a*b
 commutator(a,b)=comm(a,b)
 
+ontuples(t,g;action=^)=action.(t,Ref(g))
+onsets(t,g;action=^)=sort!(action.(t,Ref(g)))
+
 """
 `orbit(gens::AbstractVector,p,action::Function=^)`
 
@@ -188,7 +192,7 @@ julia> orbit([Perm(1,2),Perm(2,3)],1)
  2
  3
 
-julia> orbit([Perm(1,2),Perm(2,3)],[1,3],(v,g)->v.^g) # Gap "OnTuples"
+julia> orbit([Perm(1,2),Perm(2,3)],[1,3],ontuples)
 6-element Vector{Vector{Int64}}:
  [1, 3]
  [2, 3]
@@ -237,7 +241,7 @@ Dict{Int64, Perm{Int16}} with 3 entries:
 orbit functions can take any action of `G` as keyword argument
 
 ```julia-repl
-julia> transversal(G,(1,2),(x,y)->x.^y)
+julia> transversal(G,(1,2),ontuples)
 Dict{Tuple{Int64, Int64}, Perm{Int16}} with 6 entries:
   (3, 2) => (1,3)
   (1, 2) => ()
@@ -335,6 +339,12 @@ function centralizer(G::Group,p,action::Function=^)
   stabilizer(G,p,action)
 end
 
+function centralizer(G::Group,p,::typeof(ontuples))
+  C=G
+  for g in p C=stabilizer(C,g) end
+  C
+end
+
 """
 `centralizer(G::Group,H::Group)` the centralizer in `G` of the group `H`
 ```julia-repl
@@ -345,12 +355,7 @@ julia> centralizer(G,Group(Perm(1,2)))
 Group([(1,2)])
 ```
 """
-function centralizer(G::Group,H::Group)
-# centralizer(G,gens(H),(x,s)->x.^s) much slower than next for PermGroups
-  C=G
-  for g in gens(H) C=centralizer(C,g) end
-  C
-end
+centralizer(G::Group,H::Group)=centralizer(G,gens(H),ontuples)
 
 """
 `stabilizer(G::Group,s,action=^)`
@@ -933,12 +938,12 @@ end
 end
 
 """
-`Coset(phi,G)`  constructs the coset  `G.phi` where `G  isa Group{<:T}` and
-`phi  isa T`, as an  object of type `Cosetof{T}`.  This general coset knows
-only  the general  methods for  a coset  `C=G.phi` defined  in this module,
-which are
+`Coset(G::Group,phi=one(G))`  constructs the (left)  coset `G.phi` where `G
+isa  Group{<:T}` and `phi isa  T`, as an object  of type `Cosetof{T}`. This
+general  coset knows only the general methods for a coset `C=G.phi` defined
+in this module, which are
 
-  - `Group(C)` if `C==G.phi` returns `G`.
+  - `Group(C)` returns `G`.
   - `isone(C)` returns `true` iff `phi in G`
   - `one(C)` returns the trivial coset `G.1`
   - `length(C)` returns `length(G)`
@@ -953,10 +958,11 @@ Coset(G::Group,phi=one(G))=Cosetof(phi,G,Dict{Symbol,Any}())
 end
 
 """
-`NormalCoset(phi,G)`  constructs the coset  `C=G.phi` where `G  isa Group{<:T}` and
-`phi  isa T`, as an  object of type `NormalCosetof{T}`.  It is assumed that
-`phi` normalizes `G`. This general coset knows oly the general methods defined for normal cosets in this module, which in addition to those defined for
-cosets (see `Coset`) are
+`NormalCoset(G::Group,phi=one(G))`  constructs the coset `C=G.phi` where `G
+isa  Group{<:T}` and `phi isa T`,  as an object of type `NormalCosetof{T}`.
+It  is assumed that `phi` normalizes `G`. This general coset knows only the
+general  methods defined for normal cosets in the module `Groups`, which in
+addition to those defined for cosets (see `Coset`) are
 
   - `inv(C)` return `G.inv(phi)` (assumed equal to `inv(phi).G`)
   - `C*D` given another coset `G.psi` returns `G.phi*psi`

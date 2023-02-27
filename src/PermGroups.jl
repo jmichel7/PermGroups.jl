@@ -141,12 +141,13 @@ function schreier_vector(G::PermGroup,p::Integer,action::Function=^)
 end
 
 """
- The input is
+`strip(g,B,Δ)` where
  -  g: a permutation
  -  B: a base (or partial base) of a PermGroup G
  -  Δ: Δ[i]==transversal(C_G(B[1:i-1]),B[i])
  The function returns g "stripped" of its components in all C_G(B[1:i]),
- that is a pair (an element which fixes B[1:i],i+1)
+ that is a pair 
+ (an element which fixes B[1:i] and sends B[i+1] outside Δ[i],i+1)
 """
 function strip(g::Perm,B::Vector{<:Integer},Δ::Vector{Dict{T,Perm{T}}}) where T
   for i in eachindex(B)
@@ -158,10 +159,10 @@ function strip(g::Perm,B::Vector{<:Integer},Δ::Vector{Dict{T,Perm{T}}}) where T
 end
 
 """
-  see Holt, 4.4.2
+see Holt, 4.4.2
 
-  This function creates in G.prop the fields base, centralizers,
-  transversals. See the description in the functions with the same name.
+This function creates in G.prop the fields base B, centralizers C,
+transversals Δ. See the description in the functions with the same name.
 """
 function schreier_sims(G::PermGroup{T})where T
   B=T[]  # base
@@ -210,8 +211,8 @@ end
 """
 `centralizers(G::PermGroup)`
 
-for  `i in  eachindex(base(G))` the  `i`-th element  is the  centralizer of
-`base(G)[1:i-1]`
+for  `i in eachindex(base(G))` the `i`-th element is the centralizer in `G`
+of `base(G)[1:i-1]`
 """
 function centralizers(G::PermGroup{T})where T
   getp(schreier_sims,G,:centralizers)::Vector{<:PermGroup{T}}
