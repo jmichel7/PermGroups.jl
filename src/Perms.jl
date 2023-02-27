@@ -261,6 +261,7 @@ end
 #---------------------------------------------------------------------
 Base.one(p::Perm)=Perm(empty(p.d))
 Base.one(::Type{Perm{T}}) where T=Perm(T[])
+Base.isone(p::Perm)=@inbounds all(i->p.d[i]==i,eachindex(p.d))
 Base.copy(p::Perm)=Perm(copy(p.d))
 
 # hash is needed for using Perms in Sets or as keys in Dicts
@@ -307,13 +308,16 @@ function Base.:(==)(a::Perm, b::Perm)
 end
 
 " `largest_moved_point(a::Perm)` is the largest integer moved by a"
-function largest_moved_point(a::Perm)
+function largest_moved_point(a::Perm{T})where T
   p=findlast(x->a.d[x]!=x,eachindex(a.d))
-  isnothing(p) ? 0 : p
+  if !isnothing(p) return T(p) end
 end
 
 " `smallest_moved_point(a::Perm)` is the smallest integer moved by a"
-smallest_moved_point(a::Perm)=findfirst(x->a.d[x]!=x,eachindex(a.d))
+function smallest_moved_point(a::Perm{T})where T
+  p=findfirst(x->a.d[x]!=x,eachindex(a.d))
+  if !isnothing(p) return T(p) end
+end
 
 " `support(a::Perm)` is the set of all points moved by `a`"
 support(a::Perm)=eachindex(a.d)[a.d.!=eachindex(a.d)]

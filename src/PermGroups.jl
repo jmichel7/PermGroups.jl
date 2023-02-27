@@ -21,7 +21,7 @@ julia> largest_moved_point(G)  # maximum moved point of any element of `G`
 3
 
 julia> orbits(G) # the orbits are orbits on points it moves
-1-element Vector{Vector{Int64}}:
+1-element Vector{Vector{Int16}}:
  [1, 2, 3]
 
 julia> Perm(1,2) in G
@@ -102,18 +102,18 @@ Base.show(io::IO,G::PermGroup)=print(io,"Group(",gens(G),")")
 Base.one(G::PermGroup)=G.one # PermGroups should have fields gens and one
 
 "`largest_moved_point(G::PermGroup)` the largest moved point by any `g∈ G`"
-function Perms.largest_moved_point(G::PermGroup)
+function Perms.largest_moved_point(G::PermGroup{T})where T
   get!(G,:largest_moved)do
     if isempty(gens(G)) return 0 end
     maximum(largest_moved_point.(gens(G)))
-  end::Int
+  end::T
 end
 
 " `orbits(G::PermGroup)` the orbits of `G` on its moved points."
 function Perms.orbits(G::PermGroup{T})where T
   get!(G,:orbits)do
-    orbits(G,1:largest_moved_point(G);trivial=false)
-  end::Vector{Vector{Int}}
+   orbits(G,T(1):largest_moved_point(G);trivial=false)
+  end::Vector{Vector{T}}
 end
 
 """
@@ -141,30 +141,40 @@ function schreier_vector(G::PermGroup,p::Integer,action::Function=^)
 end
 
 """
-`strip(g,B,Δ)` where
- -  g: a permutation
- -  B: a base (or partial base) of a PermGroup G
- -  Δ: Δ[i]==transversal(C_G(B[1:i-1]),B[i])
- The function returns g "stripped" of its components in all C_G(B[1:i]),
- that is a pair 
- (an element which fixes B[1:i] and sends B[i+1] outside Δ[i],i+1)
+A stabchain for `G` is a `Vector{Stablink}` `S` such that for each `i`
+`S[i].c=C_G(S[1].b,…,S[i-1].b)`
+`S[i].δ=transversal(S[i].c,S[i].b`
 """
-function strip(g::Perm,B::Vector{<:Integer},Δ::Vector{Dict{T,Perm{T}}}) where T
-  for i in eachindex(B)
-    β=B[i]^g
-    if !haskey(Δ[i],β) return g,i end
-    g/=Δ[i][β]
+struct Stablink{T,TG<:PermGroup{T}}
+  b::T
+  c::TG
+  δ::Dict{T,Perm{T}}
+end
+
+const Stabchain=Vector{<:Stablink}
+
+"""
+`strip(g::Perm,S::Stabchain)`
+
+returns g "stripped" of its components in all `S.c`, that is a pair 
+(an element which fixes S[1:i].b and sends S.b[i+1] outside S.δ[i],i+1)
+"""
+function strip(g::Perm,stab::Stabchain)
+  for (i,S) in enumerate(stab)
+    β=S.b^g
+    if !haskey(S.δ,β) return g,i end
+    g/=S.δ[β]
   end
-  g,length(B)+1
+  g,length(stab)+1
 end
 
 """
 see Holt, 4.4.2
 
-This function creates in G.prop the fields base B, centralizers C,
-transversals Δ. See the description in the functions with the same name.
+This function adds to G a stabchain
 """
-function schreier_sims(G::PermGroup{T})where T
+function stabchain(G::PermGroup{T})where T
+  get!(G,:stabchain)do
   B=T[]  # base
   C=PG{T}[]  # C[i] will become C_G(B[1:i-1])
   for x in gens(G)
@@ -176,25 +186,25 @@ function schreier_sims(G::PermGroup{T})where T
     end
     if j>length(B)
       push!(B,smallest_moved_point(x))
-      push!(C,Group([x]))
+      push!(C,Group(x))
     end
   end
-  Δ=transversal.(C,B)
-  i=length(B)
+  S=map((b,c)->Stablink(b,c,transversal(c,b)),B,C)
+  i=length(S)
   while i>=1
-    for (β,wβ) in Δ[i], x in gens(C[i])
-      h=wβ*x/Δ[i][β^x] # possibly new elt of C_G(B[1:i])
+    for (β,wβ) in S[i].δ, x in gens(S[i].c)
+      h=wβ*x/S[i].δ[β^x] # possibly new elt of C_G(B[1:i])
       if isone(h) continue end
-      h,j=strip(h,B,Δ)
+      h,j=strip(h,S)
       if isone(h) continue end
       for l in i+1:j # now h is in C[l] for those l
-        if l>length(C)
-          push!(B,smallest_moved_point(h))
-          push!(C,Group([h]))
-          push!(Δ,transversal(C[l],B[l]))
+        if l>length(S)
+          b=smallest_moved_point(h)
+          c=Group(h)
+          push!(S,Stablink(b,c,transversal(c,b)))
         else
-          push!(gens(C[l]),h)
-          Δ[l]=transversal(C[l],B[l])
+          push!(gens(S[l].c),h)
+          Groups.extend_transversal!(S[l].δ,S[l].c)
         end
       end
       i=j
@@ -203,9 +213,8 @@ function schreier_sims(G::PermGroup{T})where T
     i-=1
     @label nexti
   end
-  G.base=B
-  G.centralizers=C
-  G.transversals=Δ
+  S
+  end::Vector{Stablink{T,PG{T}}}
 end
 
 """
@@ -214,9 +223,7 @@ end
 for  `i in eachindex(base(G))` the `i`-th element is the centralizer in `G`
 of `base(G)[1:i-1]`
 """
-function centralizers(G::PermGroup{T})where T
-  getp(schreier_sims,G,:centralizers)::Vector{<:PermGroup{T}}
-end
+centralizers(G::PermGroup)=map(x->x.c,stabchain(G))
 
 """
 `transversals(G::PermGroup)`
@@ -224,17 +231,13 @@ end
 returns a list whose `i`-th element is the transversal of
 `G.centralizers[i]` on `G.base[i]`
 """
-function transversals(G::PermGroup{T})where T
-  getp(schreier_sims,G,:transversals)::Vector{Dict{T,Perm{T}}}
-end
+transversals(G::PermGroup)=map(x->x.δ,stabchain(G))
 
 " `base(G::PermGroup)` A `Vector` of points stabilized by no element of `G` "
-function base(G::PermGroup{T})where T
-  getp(schreier_sims,G,:base)::Vector{T}
-end
+base(G::PermGroup)=map(x->x.b,stabchain(G))
 
 function Base.in(g::Perm,G::PermGroup)
-  g,i=strip(g,base(G),transversals(G))
+  g,i=strip(g,stabchain(G))
   isone(g)
 end
 

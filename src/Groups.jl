@@ -264,6 +264,18 @@ function transversal(G::Group,pnt,action::F=^) where F<:Function
   trans
 end
 
+function extend_transversal!(trans,G::Group,action::F=^) where F<:Function
+  orb=collect(keys(trans))
+  for pnt in orb, gen in gens(G)
+    img=action(pnt,gen)
+    if !haskey(trans,img)
+      push!(orb,img)
+      trans[img]=trans[pnt]*gen
+    end
+  end
+  trans
+end
+
 """
 `words_transversal(gens,p,action::Function=^)`
 
