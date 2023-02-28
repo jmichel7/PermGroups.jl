@@ -5,7 +5,7 @@ This  module is a port  of some GAP functionality  on permutation groups. A
 
 ```julia-repl
 julia> G=Group([Perm(i,i+1) for i in 1:2])
-Group([(1,2), (2,3)])
+Group((1,2),(2,3))
 
 # PermGroups are iterators over their elements
 julia> collect(G)
@@ -33,25 +33,13 @@ false
 `elements`,   `in`  and   other  functions   are  computed   on  `G`  using
 Schreier-Sims theory, that is computing the following
 ```julia-repl
-julia> base(G) # a list of points that no element of G fixes
-2-element Vector{Int16}:
- 1
- 2
-
-julia> centralizers(G) # the i-th element is C_G(base[1:i-1])
-2-element Vector{PermGroups.PG{Int16}}:
- Group([(1,2), (2,3)])
- Group([(2,3)])
-
-# i-th element is the transversal of centralizer[i] on base[i]
-julia> transversals(G)
-2-element Vector{Dict{Int16, Perm{Int16}}}:
- Dict(2 => (1,2), 3 => (1,3,2), 1 => ())
- Dict(2 => (), 3 => (2,3))
+julia> get_stabchain(G)
+b:1 c:Group((1,2),(2,3))
+  δ:Dict(2=>(1,2),3=>(1,3,2),1=>())
+b:2 c:Group((2,3))
+  δ:Dict(2=>(),3=>(2,3))
 ```
-The  code refers  to the  Handbook of  computational group theory, by Holt,
-Eick,  O'Brien, chapter 4  for basic algorithms  on permutation groups. See
-the docstrings for `base, transversals, centralizers` for more details.
+See the docstring of `stabchain` for explanations.
 
 There are efficient methods for `PermGroups` for the functions `in, length,
 elements,   position_class`.  The  function   `on_classes`  determines  the
@@ -90,14 +78,18 @@ using Reexport
 include("Perms.jl"); @reexport using .Perms
 include("Groups.jl"); @reexport using .Groups
 using Combinat: tally, collectby
-export PermGroup, base, transversals, centralizers, symmetric_group, reduced,
-  stab_onmats, onmats, on_classes
+export PermGroup, symmetric_group, reduced, stab_onmats, onmats, on_classes,
+       get_stabchain, stabchain, Stabchain, Stablink
 #-------------------- now permutation groups -------------------------
 abstract type PermGroup{T}<:Group{Perm{T}} end
 
 PermGroup()=Group(Perm{Int16}[])
 
-Base.show(io::IO,G::PermGroup)=print(io,"Group(",gens(G),")")
+function Base.show(io::IO,G::PermGroup)
+  print(io,"Group(")
+  join(io,gens(G),",")
+  print(io,")")
+end
 
 Base.one(G::PermGroup)=G.one # PermGroups should have fields gens and one
 
@@ -115,20 +107,26 @@ function Perms.orbits(G::PermGroup{T})where T
   end::Vector{Vector{T}}
 end
 
+struct SchreierTransversal{T<:Signed,TP<:Perm{T}}
+  v::Vector{T}
+  gg::Vector{TP}
+end
+
 """
 describe the orbit of Int p under PermGroup G as a Schreier vector v.
 That is, v[p]==-1 and v[k]=i means that k^inv(G(i)) is the antecessor of k
 in the orbit of p.
 """
-function schreier_vector(G::PermGroup,p::Integer,action::Function=^)
-  res=zeros(Int,largest_moved_point(G))
+function SchreierTransversal(G::PermGroup{T},p::Integer)where T
+# T should be a signed type
+  res=zeros(T,max(largest_moved_point(G),p))
   res[p]=-1
-  new=BitSet([p])
+  new=[p]
   while true
-    n=new
-    new=BitSet([])
+    n=copy(new)
+    empty!(new)
     for p in n, i in eachindex(gens(G))
-      q=action(p,gens(G)[i])
+      q=p^gens(G)[i]
       if res[q]==0
         res[q]=i
         push!(new,q)
@@ -136,21 +134,91 @@ function schreier_vector(G::PermGroup,p::Integer,action::Function=^)
     end
     if isempty(new) break end
   end
-  res
+  SchreierTransversal(res,gens(G))
 end
 
-"""
-A stabchain for `G` is a `Vector{Stablink}` `S` such that for each `i`
-`S[i].c=C_G(S[1].b,…,S[i-1].b)`
-`S[i].δ=transversal(S[i].c,S[i].b`
-"""
-struct Stablink{T,TG<:PermGroup{T}}
+function Groups.extend_transversal!(t::SchreierTransversal,G::PermGroup)
+  new=filter(!iszero(t.v[i]),eachindex(t.v))
+  append!(t.gg,setdiff(gens(g),t.gg))
+  while true
+    n=copy(new)
+    empty!(new)
+    for p in n, i in eachindex(t.gg)
+      q=p^t.gg[i]
+      if t[q]==0
+        t[q]=i
+        push!(new,q)
+      end
+    end
+    if isempty(new) break end
+  end
+  t
+end
+
+Base.haskey(t::SchreierTransversal,k::Integer)=k<=length(t.v) && !iszero(t.v[k])
+
+function Base.getindex(t::SchreierTransversal,k::Integer)
+  p=t.v[k]
+  if p==-1 return one(first(t.gg)) end
+  if iszero(p) error(k," not in orbit") end
+  g=t.gg[p]
+  res=g
+  while true
+    k=preimage(k,g)
+    p=t.v[k]
+    if p==-1 return res end
+    if iszero(p) error(k," not in orbit") end
+    g=t.gg[p]
+    res=g*res
+  end
+end
+
+Base.length(t::SchreierTransversal)=count(!iszero,t.v)
+
+function Base.iterate(t::SchreierTransversal)
+  i=findfirst(!iszero,t.v)
+  (i=>t[i],i)
+end
+
+function Base.iterate(t::SchreierTransversal,i)
+  i=findnext(!iszero,t.v,i+1)
+  if isnothing(i) return end
+  (i=>t[i],i)
+end
+
+struct Stablink{T,TG<:PermGroup{T},TT}
   b::T
   c::TG
-  δ::Dict{T,Perm{T}}
+  δ::TT
 end
 
+"""
+A  `Stabchain` is  a  `Vector{Stablink}` `S=[S₁,…,Sₖ]` associated to a
+`PermGroup{T}`  `G`. The `Vector{T}` given by `B=[S₁.b,…,Sₖ.b]` is called a
+`base`   for  `G`.   At  each   stage  one   has  `Sᵢ.c=C_G(B[1:i-1])`  and
+`Sᵢ.δ=transversal(Sᵢ.c,Sᵢ.b)`
+"""
 const Stabchain=Vector{<:Stablink}
+
+function Base.show(io::IO,S::Stabchain)
+  print(io,"[")
+  for i in 1:length(S)
+    print(io,"Stablink(",S[i].b,",",S[i].c,",\n  ",S[i].δ,")")
+    if i!=length(S) print(io,",\n") end
+  end
+  print(io,"]")
+  return
+end
+
+function Base.show(io::IO, ::MIME"text/plain", S::Stabchain)
+  if !get(io,:limit,false) show(io,S);return end
+  for i in eachindex(S)
+    println(io,"b:",S[i].b," c:",S[i].c)
+    print(io,"  δ:Dict(")
+    join(io,[string(x[1],"=>",repr(x[2],context=io)) for x in S[i].δ],",")
+    if i==length(S) print(io,")") else println(io,")") end
+  end
+end
 
 """
 `strip(g::Perm,S::Stabchain)`
@@ -168,17 +236,20 @@ function strip(g::Perm,stab::Stabchain)
 end
 
 """
-see Holt, 4.4.2
+Constructs a `Stabchain` for `G`
+
+The  code refers  to the  Handbook of  computational group theory, by Holt,
+Eick,  O'Brien, section 4.4.2.
 """
-function stabchain(G::PermGroup{T},B=T[])where T
+function stabchain(G::PermGroup{T},B=T[];trans=transversal)where T
   B=T.(B) # check type and make copy to be able to extend it
   for x in gens(G) 
     if all(b->b^x==b,B) push!(B,smallest_moved_point(x)) end
   end
-  S=Stablink{T,PG{T}}[]
+  S=Stablink{T,PG{T},trans==transversal ? Dict{T,Perm{T}} : trans{T,Perm{T}}}[]
   for i in eachindex(B)
     C=Group(filter(g->all(b->b^g==b,B[1:i-1]),gens(G)))
-    push!(S,Stablink(B[i],C,transversal(C,B[i])))
+    push!(S,Stablink(B[i],C,trans(C,B[i])))
   end
   i=length(S)
   while i>=1
@@ -191,7 +262,7 @@ function stabchain(G::PermGroup{T},B=T[])where T
         if l>length(S)
           b=smallest_moved_point(h)
           c=Group(h)
-          push!(S,Stablink(b,c,transversal(c,b)))
+          push!(S,Stablink(b,c,trans(c,b)))
         else
           push!(gens(S[l].c),h)
           Groups.extend_transversal!(S[l].δ,S[l].c)
@@ -210,31 +281,18 @@ end
 function get_stabchain(G::PermGroup{T})where T
   get!(G,:stabchain)do
     stabchain(G,T[])
-  end::Vector{Stablink{T,PG{T}}}
+  end::Vector{Stablink{T,PG{T},Dict{T,Perm{T}}}}
 end
-
-"""
-`centralizers(G::PermGroup)`
-
-for  `i in eachindex(base(G))` the `i`-th element is the centralizer in `G`
-of `base(G)[1:i-1]`
-"""
-centralizers(G::PermGroup)=map(x->x.c,get_stabchain(G))
-
-"""
-`transversals(G::PermGroup)`
-
-returns a list whose `i`-th element is the transversal of
-`G.centralizers[i]` on `G.base[i]`
-"""
-transversals(G::PermGroup)=map(x->x.δ,get_stabchain(G))
-
-" `base(G::PermGroup)` A `Vector` of points stabilized by no element of `G` "
-base(G::PermGroup)=map(x->x.b,get_stabchain(G))
 
 function Base.in(g::Perm,G::PermGroup)
   g,i=strip(g,stabchain(G))
   isone(g)
+end
+
+function Groups.stabilizer(G::PermGroup,p,::typeof(ontuples))
+  S=stabchain(G,p)
+  if length(S)==length(p) return Group(one(G)) end
+  S[length(p)+1].c
 end
 
 # only difference with general method is sorting
@@ -280,11 +338,11 @@ end
 
 `aut`  is an automorphism of  the group `G` (for  a permutation group, this
 could  be  given  as  a  permutation  normalizing  `G`).  The result is the
-permutation of `1:nconjugacy_classes(G)` induced ny `aut`.
+permutation of `1:nconjugacy_classes(G)` induced by `aut`.
 
 ```julia-repl
 julia> W=Group(Perm(1,2),Perm(2,3),Perm(4,5),Perm(5,6))
-Group([(1,2), (2,3), (4,5), (5,6)])
+Group((1,2),(2,3),(4,5),(5,6))
 
 julia> on_classes(W,Perm(1,4,2,5,3,6))
 Perm{Int64}: (2,4)(3,7)(6,8)
@@ -351,7 +409,7 @@ groups).
 """
 function Base.length(::Type{T},G::PermGroup)where T
   T(get!(G,:length)do
-    prod(T.(length.(transversals(G))))
+     prod(x->T(length(x.δ)),get_stabchain(G))
   end)
 end
 
@@ -359,7 +417,7 @@ Base.length(G::PermGroup)=length(Int,G)
 
 # iterating I directly is 25% faster unfortunately
 function Base.iterate(G::PermGroup{T}) where T
-  I=ProdIterator(reverse(values.(transversals(G))))
+  I=ProdIterator(map(x->values(x.δ),reverse(get_stabchain(G))))
   u=iterate(I)
   if u===nothing return u end
   p,st=u
@@ -376,7 +434,7 @@ end
 # elements is twice faster than collect(G), should not be
 function Groups.elements(G::PermGroup)
   get!(G,:elements)do
-    t=reverse(sort.(collect.(values.(transversals(G)))))
+    t=reverse(sort.(collect.(values.(map(x->x.δ,get_stabchain(G))))))
     if isempty(t) return [one(G)] end
     res=t[1]
     for i in 2:length(t)
@@ -390,9 +448,8 @@ end
 
 # computes "canonical" element of W.phi
 function reduced(W::PermGroup,phi)
-  for i in eachindex(base(W))
-    t=transversals(W)[i]
-    (kw,e)=minimum((k^phi,e) for (k,e) in t)
+  for C in get_stabchain(W)
+    (kw,e)=minimum((k^phi,e) for (k,e) in C.δ)
     phi=e*phi
   end
   phi
@@ -477,7 +534,7 @@ centralizes also `extra`.
 
 ```julia-repl
 julia> stab_onmats((1:30)'.*(1:30).%15)
-Group([(10,25), (5,20), (12,27), (3,18), (9,24), (6,21), (13,28), (8,23), (7,22), (2,17), (14,29), (11,26), (4,19), (1,4)(2,8)(3,12)(6,9)(7,13)(11,14)(16,19)(17,23)(18,27)(21,24)(22,28)(26,29), (1,11)(2,7)(4,14)(5,10)(8,13)(16,26)(17,22)(19,29)(20,25)(23,28), (1,16), (15,30)])
+Group((10,25),(5,20),(12,27),(3,18),(9,24),(6,21),(13,28),(8,23),(7,22),(2,17),(14,29),(11,26),(4,19),(1,4)(2,8)(3,12)(6,9)(7,13)(11,14)(16,19)(17,23)(18,27)(21,24)(22,28)(26,29),(1,11)(2,7)(4,14)(5,10)(8,13)(16,26)(17,22)(19,29)(20,25)(23,28),(1,16),(15,30))
 ```
 """
 function stab_onmats(M::AbstractMatrix;extra=nothing,verbose=false)

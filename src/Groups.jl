@@ -10,7 +10,7 @@ This module gives some basic functionality on groups.
 # Examples
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(1,2,3))
-Group([(1,2), (1,2,3)])
+Group((1,2),(1,2,3))
 
 julia> gens(G)
 2-element Vector{Perm{Int16}}:
@@ -154,7 +154,7 @@ the corresponding generator is used.
 
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(1,2,3))
-Group([(1,2), (1,2,3)])
+Group((1,2),(1,2,3))
 
 julia> G(2,1,-2) # returns gens(G)[2]*gens(G)[1]/gens(G)[2]
 (1,3)
@@ -344,7 +344,7 @@ computes  the subgroup of elements `g` of `G` such that `action(p,g)==p`.
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(1,2,3));
 julia> centralizer(G,1)
-Group([(2,3)])
+Group((2,3))
 ```
 """
 function centralizer(G::Group,p,action::Function=^)
@@ -361,10 +361,10 @@ end
 `centralizer(G::Group,H::Group)` the centralizer in `G` of the group `H`
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(1,2,3))
-Group([(1,2), (1,2,3)])
+Group((1,2),(1,2,3))
 
 julia> centralizer(G,Group(Perm(1,2)))
-Group([(1,2)])
+Group((1,2))
 ```
 """
 centralizer(G::Group,H::Group)=centralizer(G,gens(H),ontuples)
@@ -376,13 +376,13 @@ computes  the subgroup of elements `g` of `G` such that `action(p,g)==p`.
 
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(1,2,3,4))
-Group([(1,2), (1,2,3,4)])
+Group((1,2),(1,2,3,4))
 ```
 Assume that `s` is a set, represented as a sorted list without repetitions.
 The  action  of  `g∈  G`  on  sets  is  given  by  `(g,p)->sort(p.^g)`.
 ```julia-repl
 julia> stabilizer(G,[1,2],(s,g)->sort(s.^g))
-Group([(3,4), (1,2), (1,2)(3,4)])
+Group((3,4),(1,2),(1,2)(3,4))
 ```
 """
 function stabilizer(G::Group,p,action=^)
@@ -397,10 +397,10 @@ end
 
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(3,4),Perm(1,3)*Perm(2,4))
-Group([(1,2), (3,4), (1,3)(2,4)])
+Group((1,2),(3,4),(1,3)(2,4))
 
 julia> center(G)
-Group([(1,2)(3,4)])
+Group((1,2)(3,4))
 ```
 """
 function center(G::Group{T})where T
@@ -685,7 +685,7 @@ possible `g` forms a right coset of the centralizer of p in G.
 
 ```julia-repl
 julia> g=Group(perm"(1,2,3)(6,7)",perm"(3,4,5)(7,8)")
-Group([(1,2,3)(6,7), (3,4,5)(7,8)])
+Group((1,2,3)(6,7),(3,4,5)(7,8))
 
 julia> transporting_elt(g,1,5)
 (1,5,4,3,2)
@@ -764,13 +764,13 @@ builds an object representing the homomorphism from `S` to `T` which maps
 
 ```julia-repl
 julia> S=Group(Perm(1,2),Perm(2,3))
-Group([(1,2), (2,3)])
+Group((1,2),(2,3))
 
 julia> T=Group(Perm(1,2))
-Group([(1,2)])
+Group((1,2))
 
 julia> h=Hom(S,T,[T(1),T(1)])
-Hom(Group([(1,2), (2,3)])→ Group([(1,2)]);[(1,2), (2,3)]↦ [(1,2), (1,2)]
+Hom(Group((1,2),(2,3))→ Group((1,2));[(1,2), (2,3)]↦ [(1,2), (1,2)]
 
 julia> h(S(1,2)) # the image by h
 ()

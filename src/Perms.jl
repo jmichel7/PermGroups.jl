@@ -119,7 +119,7 @@ method   `arrangements`  from   `Combinat`  or   iterate  the  elements  of
 module Perms
 
 export restricted, orbit, orbits, order, Perm, largest_moved_point, cycles,
-  cycletype, support, @perm_str, smallest_moved_point,
+  cycletype, support, @perm_str, smallest_moved_point, preimage,
   reflength, reflection_length,
   mappingPerm, sortPerm, Perm_rowcol, randPerm, permute
 
@@ -354,6 +354,12 @@ function Base.inv(a::Perm)
   r=similar(a.d)
 @inbounds for (i,v) in pairs(a.d) r[v]=i end
   Perm(r)
+end
+
+"`preimage(i::Integer,p::Perm)` the preimage of `i` by `p`"
+function preimage(i::Integer,p::Perm{T})where T
+  p=findfirst(==(i),p.d)
+  if isnothing(p) return T(i) else return T(p) end
 end
 
 # less allocations than inv(a)*b
