@@ -310,7 +310,7 @@ end
 " `largest_moved_point(a::Perm)` is the largest integer moved by a"
 function largest_moved_point(a::Perm{T})where T
   p=findlast(x->a.d[x]!=x,eachindex(a.d))
-  if !isnothing(p) return T(p) end
+  return isnothing(p) ? T(0) : T(p)
 end
 
 " `smallest_moved_point(a::Perm)` is the smallest integer moved by a"
@@ -320,8 +320,8 @@ function smallest_moved_point(a::Perm{T})where T
 end
 
 " `support(a::Perm)` is the set of all points moved by `a`"
-support(a::Perm)=eachindex(a.d)[a.d.!=eachindex(a.d)]
-# 5 times faster than findall(x->a.d[x]!=x,eachindex(a.d))
+support(a::Perm{T}) where T=(T(1):T(length(a.d)))[[x!=y for (x,y) in enumerate(a.d)]]
+# faster than findall(x->a.d[x]!=x,eachindex(a.d))
 
 " for convenience: `sortPerm(a)=Perm(sortperm(a))`"
 sortPerm(::Type{T},a::AbstractVector;k...) where T=Perm{T}(sortperm(a;k...))

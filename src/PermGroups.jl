@@ -104,8 +104,7 @@ Base.one(G::PermGroup)=G.one # PermGroups should have fields gens and one
 "`largest_moved_point(G::PermGroup)` the largest moved point by any `g∈ G`"
 function Perms.largest_moved_point(G::PermGroup{T})where T
   get!(G,:largest_moved)do
-    if isempty(gens(G)) return 0 end
-    maximum(largest_moved_point.(gens(G)))
+    maximum(largest_moved_point.(gens(G));init=T(0))
   end::T
 end
 
@@ -170,26 +169,17 @@ end
 
 """
 see Holt, 4.4.2
-
-This function adds to G a stabchain
 """
-function stabchain(G::PermGroup{T})where T
-  get!(G,:stabchain)do
-  B=T[]  # base
-  C=PG{T}[]  # C[i] will become C_G(B[1:i-1])
-  for x in gens(G)
-    j=1
-    while j<=length(B)
-      push!(gens(C[j]),x)
-      if B[j]^x!=B[j] break end
-      j+=1
-    end
-    if j>length(B)
-      push!(B,smallest_moved_point(x))
-      push!(C,Group(x))
-    end
+function stabchain(G::PermGroup{T},B=T[])where T
+  B=T.(B) # check type and make copy to be able to extend it
+  for x in gens(G) 
+    if all(b->b^x==b,B) push!(B,smallest_moved_point(x)) end
   end
-  S=map((b,c)->Stablink(b,c,transversal(c,b)),B,C)
+  S=Stablink{T,PG{T}}[]
+  for i in eachindex(B)
+    C=Group(filter(g->all(b->b^g==b,B[1:i-1]),gens(G)))
+    push!(S,Stablink(B[i],C,transversal(C,B[i])))
+  end
   i=length(S)
   while i>=1
     for (β,wβ) in S[i].δ, x in gens(S[i].c)
@@ -214,6 +204,12 @@ function stabchain(G::PermGroup{T})where T
     @label nexti
   end
   S
+end
+
+"This function adds to G a stabchain"
+function get_stabchain(G::PermGroup{T})where T
+  get!(G,:stabchain)do
+    stabchain(G,T[])
   end::Vector{Stablink{T,PG{T}}}
 end
 
@@ -223,7 +219,7 @@ end
 for  `i in eachindex(base(G))` the `i`-th element is the centralizer in `G`
 of `base(G)[1:i-1]`
 """
-centralizers(G::PermGroup)=map(x->x.c,stabchain(G))
+centralizers(G::PermGroup)=map(x->x.c,get_stabchain(G))
 
 """
 `transversals(G::PermGroup)`
@@ -231,10 +227,10 @@ centralizers(G::PermGroup)=map(x->x.c,stabchain(G))
 returns a list whose `i`-th element is the transversal of
 `G.centralizers[i]` on `G.base[i]`
 """
-transversals(G::PermGroup)=map(x->x.δ,stabchain(G))
+transversals(G::PermGroup)=map(x->x.δ,get_stabchain(G))
 
 " `base(G::PermGroup)` A `Vector` of points stabilized by no element of `G` "
-base(G::PermGroup)=map(x->x.b,stabchain(G))
+base(G::PermGroup)=map(x->x.b,get_stabchain(G))
 
 function Base.in(g::Perm,G::PermGroup)
   g,i=strip(g,stabchain(G))
@@ -407,10 +403,10 @@ function Groups.NormalCoset(W::PermGroup,phi::Perm=one(W))
   Groups.NormalCosetof(reduced(W,phi),W,Dict{Symbol,Any}())
 end
 
-function Perms.largest_moved_point(G::NormalCoset{<:Perm,<:Group})
+function Perms.largest_moved_point(G::NormalCoset{<:Perm{T},<:Group})where T
   get!(G,:largest_moved)do
     max(largest_moved_point(Group(G)),largest_moved_point(G.phi))
-  end::Int
+  end::T
 end
 
 function Perms.orbits(G::NormalCoset{<:Perm,<:Group})
