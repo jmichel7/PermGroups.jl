@@ -85,9 +85,12 @@ abstract type PermGroup{T}<:Group{Perm{T}} end
 
 PermGroup()=Group(Perm{Int16}[])
 
-function Base.show(io::IO,G::PermGroup)
+function Base.show(io::IO,G::PermGroup{T})where T
   print(io,"Group(")
+  t=isempty(gens(G)) || T!=Perms.Idef 
+  if t print(io,"Perm{",T,"}[") end
   join(io,gens(G),",")
+  if t print(io,"]") end
   print(io,")")
 end
 
