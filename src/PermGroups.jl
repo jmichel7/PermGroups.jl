@@ -368,7 +368,7 @@ struct ProdIterator{T}
   iterators::Vector{T}
 end
 
-Base.length(I::ProdIterator)=prod(length.(I.iterators))
+Base.length(I::ProdIterator)=prod(length.(I.iterators);init=0)
 Base.eltype(::ProdIterator{T}) where T=eltype(T)
 
 function Base.iterate(I::ProdIterator)
@@ -409,7 +409,7 @@ groups).
 """
 function Base.length(::Type{T},G::PermGroup)where T
   T(get!(G,:length)do
-     prod(x->T(length(x.δ)),get_stabchain(G))
+     prod(x->T(length(x.δ)),get_stabchain(G);init=1)
   end)
 end
 
