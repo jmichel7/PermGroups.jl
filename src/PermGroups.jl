@@ -203,6 +203,8 @@ A  `Stabchain` is  a  `Vector{Stablink}` `S=[S₁,…,Sₖ]` associated to a
 """
 const Stabchain=Vector{<:Stablink}
 
+base(S::Stabchain)=map(s->s.b,S)
+
 function Base.show(io::IO,S::Stabchain)
   print(io,"[")
   for i in 1:length(S)
@@ -215,11 +217,14 @@ end
 
 function Base.show(io::IO, ::MIME"text/plain", S::Stabchain)
   if !get(io,:limit,false) show(io,S);return end
+  n=maximum(s->maximum(keys(s.δ)),S)
+  ord=invperm(vcat(base(S),setdiff(1:n,base(S))))
   for i in eachindex(S)
     println(io,"b:",S[i].b," c:",S[i].c)
-    print(io,"  δ:Dict(")
-    join(io,[string(x[1],"=>",repr(x[2],context=io)) for x in S[i].δ],",")
-    if i==length(S) print(io,")") else println(io,")") end
+    print(io,"  δ:")
+    l=sort(collect(keys(S[i].δ)),by=i->ord[i])
+    join(io,[string(j,"=>",repr(S[i].δ[j],context=io)) for j in l],",")
+    if i!=length(S) println(io) end
   end
 end
 
