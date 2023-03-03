@@ -170,8 +170,21 @@ end
 comm(a,b)=inv(a)*inv(b)*a*b
 commutator(a,b)=comm(a,b)
 
-ontuples(t,g;action=^)=action.(t,Ref(g))
-onsets(t,g;action=^)=sort!(action.(t,Ref(g)))
+"""
+`ontuples(t,g)`
+
+Assume  that `t` is a  `Vector` or a `NTuple`.  `ontuples` is the action of
+`g` given by `(s,g)->s.^g`.
+"""
+ontuples(t,g)=t.^g
+
+"""
+`onsets(s,g)`
+
+Assume that `s` is a set, represented as a sorted list without repetitions.
+`onsets` is the  action  of  `g`  given  by  `(s,g)->sort(s.^g)`.
+"""
+onsets(s,g)=sort!(s.^g)
 
 """
 `orbit(gens::AbstractVector,p,action::Function=^)`
@@ -351,12 +364,6 @@ function centralizer(G::Group,p,action::Function=^)
   stabilizer(G,p,action)
 end
 
-function centralizer(G::Group,p,::typeof(ontuples))
-  C=G
-  for g in p C=stabilizer(C,g) end
-  C
-end
-
 """
 `centralizer(G::Group,H::Group)` the centralizer in `G` of the group `H`
 ```julia-repl
@@ -367,7 +374,7 @@ julia> centralizer(G,Group(Perm(1,2)))
 Group((1,2))
 ```
 """
-centralizer(G::Group,H::Group)=centralizer(G,gens(H),ontuples)
+centralizer(G::Group,H::Group)=stabilizer(G,gens(H),ontuples)
 
 """
 `stabilizer(G::Group,s,action=^)`
@@ -379,9 +386,9 @@ julia> G=Group(Perm(1,2),Perm(1,2,3,4))
 Group((1,2),(1,2,3,4))
 ```
 Assume that `s` is a set, represented as a sorted list without repetitions.
-The  action  of  `g∈  G`  on  sets  is  given  by  `(g,p)->sort(p.^g)`.
+`onsets` is the  action  of  `g∈  G`  given  by  `(g,p)->sort(p.^g)`.
 ```julia-repl
-julia> stabilizer(G,[1,2],(s,g)->sort(s.^g))
+julia> stabilizer(G,[1,2],onsets)
 Group((3,4),(1,2),(1,2)(3,4))
 ```
 """
@@ -390,6 +397,12 @@ function stabilizer(G::Group,p,action=^)
   if length(t)==1 return G end
   C=[wx*s/t[action(x,s)] for (x,wx) in t for s in gens(G)] #Schreier generators
   Group(unique!(sort(C)))
+end
+
+function stabilizer(G::Group,p,::typeof(ontuples))
+  C=G
+  for g in p C=stabilizer(C,g) end
+  C
 end
 
 """
@@ -666,7 +679,7 @@ isabelian(W::Group)=all(x*y==y*x for x in gens(W), y in gens(W))
 iscyclic(W::Group)=isabelian(W) && lcm(ordergens(W))==length(W)
 
 "`istrivial(G::Group)` whether `G` is trivial"
-istrivial(W::Group)=order(G)==1
+istrivial(G::Group)=order(G)==1
 
 "`rand(W::Group)` a random element of `W`"
 function Base.rand(W::Group)
