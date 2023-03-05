@@ -352,7 +352,7 @@ end
 
 function Base.inv(a::Perm)
   r=similar(a.d)
-@inbounds for (i,v) in pairs(a.d) r[v]=i end
+  @inbounds for (i,v) in pairs(a.d) r[v]=i end
   Perm(r)
 end
 

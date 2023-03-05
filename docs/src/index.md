@@ -15,6 +15,7 @@ Perm(::AbstractMatrix, ::AbstractMatrix)
 @perm_str
 largest_moved_point(::Perm)
 smallest_moved_point
+preimage
 permute
 sortPerm
 randPerm
@@ -27,7 +28,7 @@ support
 sign
 Base.Matrix(::Perm,n)
 restricted(::Perm,::AbstractVector{<:Integer})
-reflength(::Perm)
+reflection_length(::Perm)
 mappingPerm
 Perm_rowcol
 ```
@@ -35,9 +36,12 @@ Perm_rowcol
 ```@docs
 Groups
 Group
-gens
-ngens
+generators
+number_of_generators
+one(::Group)
 orders_of_generators
+ontuples
+onsets
 Groups.orbit(::AbstractVector, ::Any)
 Groups.orbits(::Group, ::Any)
 elements(::Group)
@@ -53,12 +57,12 @@ length(::Group)
 classreps(::Group)
 conjugacy_classes
 conjugacy_class
-nconjugacy_classes
+number_of_conjugacy_classes
 position_class
 fusion_conjugacy_classes
 minimal_words
 words(::Group)
-transporting_elt
+transporting_element
 intersect(::Group,::Group)
 rand(::Group)
 isabelian
@@ -73,13 +77,11 @@ NormalCoset
 ```@docs
 PermGroups
 largest_moved_point(::PermGroup)
-base
-centralizers
-transversals
 in(::Perm,::PermGroup)
 on_classes
 symmetric_group
 onmats
 stab_onmats
+PermGroups.Perm_onmats
 PermGroups.ProdIterator
 ```

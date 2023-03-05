@@ -308,12 +308,11 @@ Dict{Int64, Vector{Int64}} with 3 entries:
 function words_transversal(gens,pnt,action::F=^) where F<:Function
   trans=Dict(pnt=>Int[])
   orb=[pnt]
-  for pnt in orb, i in eachindex(gens)
-    gen=gens[i]
+  for pnt in orb, (i,gen) in enumerate(gens)
     img=action(pnt,gen)
     if !haskey(trans,img)
       push!(orb,img)
-      trans[img]=vcat(trans[pnt],[i])
+      trans[img]=push!(copy(trans[pnt]),i)
     end
   end
   trans
@@ -389,7 +388,7 @@ Assume that `s` is a set, represented as a sorted list without repetitions.
 `onsets` is the  action  of  `g∈  G`  given  by  `(g,p)->sort(p.^g)`.
 ```julia-repl
 julia> stabilizer(G,[1,2],onsets)
-Group((3,4),(1,2),(1,2)(3,4))
+Group((3,4),(1,2))
 ```
 """
 function stabilizer(G::Group,p,action=^)
@@ -679,7 +678,7 @@ isabelian(W::Group)=all(x*y==y*x for x in gens(W), y in gens(W))
 iscyclic(W::Group)=isabelian(W) && lcm(ordergens(W))==length(W)
 
 "`istrivial(G::Group)` whether `G` is trivial"
-istrivial(G::Group)=order(G)==1
+istrivial(G::Group)=all(isone,gens(G))
 
 "`rand(W::Group)` a random element of `W`"
 function Base.rand(W::Group)

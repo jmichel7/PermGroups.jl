@@ -1,3 +1,4 @@
+# work in progress
 function Base.collect(S::Stabchain)
   n=maximum(s->maximum(keys(s.δ)),S)
   base=map(s->s.b,S)
@@ -20,6 +21,7 @@ function Base.collect(S::Stabchain)
       gl=u[l]*gl
     end
     push!(res,gl)
+    @show gl,c
     while l>0 && c[l]==length(S[l].δ) 
       l-=1
     end
@@ -30,26 +32,6 @@ function Base.collect(S::Stabchain)
       γ=preimage(γ,u[k])
     end
     u[l]=S[l].δ[γ]
-  end
-end
-
-
-function arrange(n)
-  p=collect(1:n)
-  res=fill(0,factorial(n),n)
-  k=0
-  while true
-    k+=1;res[k,:].=p
-    i=n-1;while i>0 && p[i]>p[i+1] i-=1 end
-    if iszero(i) return res end
-    j=n;while p[i]>p[j] j-=1 end
-    p[i],p[j]=p[j],p[i]
-    i+=1
-    j=n
-    while i<j
-      p[i],p[j]=p[j],p[i]
-      i+=1;j-=1
-    end
   end
 end
 

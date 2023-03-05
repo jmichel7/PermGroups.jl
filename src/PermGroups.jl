@@ -35,9 +35,9 @@ Schreier-Sims theory, that is computing the following
 ```julia-repl
 julia> get_stabchain(G)
 b:1 c:Group((1,2),(2,3))
-  δ:Dict(2=>(1,2),3=>(1,3,2),1=>())
+  δ:1=>(),2=>(1,2),3=>(1,3,2)
 b:2 c:Group((2,3))
-  δ:Dict(2=>(),3=>(2,3))
+  δ:2=>(),3=>(2,3)
 ```
 See the docstring of `stabchain` for explanations.
 
@@ -232,15 +232,16 @@ end
 `strip(g::Perm,S::Stabchain)`
 
 returns g "stripped" of its components in all `S.c`, that is a pair 
-(an element which fixes S[1:i].b and sends S.b[i+1] outside S.δ[i],i+1)
+(an element which fixes S[1:i-1].b and sends S.b[i] outside S.δ[i],i+1)
 """
-function strip(g::Perm,stab::Stabchain)
-  for (i,S) in enumerate(stab)
+function strip(g::Perm,S::Stabchain)
+  g=copy(g)
+  for (i,S) in enumerate(S)
     β=S.b^g
     if !haskey(S.δ,β) return g,i end
-    g/=S.δ[β]
+    Perms.mul!(g,inv(S.δ[β]))
   end
-  g,length(stab)+1
+  g,length(S)+1
 end
 
 """
@@ -249,7 +250,7 @@ Constructs a `Stabchain` for `G`
 The  code refers  to the  Handbook of  computational group theory, by Holt,
 Eick,  O'Brien, section 4.4.2.
 """
-function stabchain(G::PermGroup{T},B=T[];trans=transversal)where T
+function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
   B=T.(B) # check type and make copy to be able to extend it
   for x in gens(G) 
     if all(b->b^x==b,B) push!(B,smallest_moved_point(x)) end
@@ -257,7 +258,8 @@ function stabchain(G::PermGroup{T},B=T[];trans=transversal)where T
   S=Stablink{T,PG{T},trans==transversal ? Dict{T,Perm{T}} : trans{T,Perm{T}}}[]
   for i in eachindex(B)
     C=Group(filter(g->all(b->b^g==b,B[1:i-1]),gens(G)))
-    push!(S,Stablink(B[i],C,trans(C,B[i])))
+    t=trans(C,B[i])
+    push!(S,Stablink(B[i],C,t))
   end
   i=length(S)
   while i>=1
@@ -282,6 +284,17 @@ function stabchain(G::PermGroup{T},B=T[];trans=transversal)where T
     i-=1
     @label nexti
   end
+  if weed
+    I=filter(eachindex(S))do i
+      if istrivial(S[i].c) return false end
+      if length(S[i].δ)==1 return false end
+      true
+    end
+#   if length(S)-length(I)>5
+#     @show G,B
+#   end
+    S=S[I]
+  end
   S
 end
 
@@ -293,14 +306,17 @@ function get_stabchain(G::PermGroup{T})where T
 end
 
 function Base.in(g::Perm,G::PermGroup)
-  g,i=strip(g,stabchain(G))
+  g,i=strip(g,get_stabchain(G))
   isone(g)
 end
 
+Groups.stabilizer(G::PermGroup,p::Integer)=stabilizer(G,[p],ontuples)
+
 function Groups.stabilizer(G::PermGroup,p::AbstractVector{<:Integer},::typeof(ontuples))
   S=stabchain(G,p)
-  if length(S)==length(p) return Group(one(G)) end
-  S[length(p)+1].c
+  p=findfirst(s->!(s.b in p),S)
+  if isnothing(p) return Group(one(G)) end
+  S[p].c
 end
 
 """
@@ -327,6 +343,7 @@ function search(S::Stabchain{T},test,property;all=true)where T
   u=[one(Perm{T}) for i in 1:k]
   Δ=map(s->sort(collect(keys(s.δ)),by=i->ord[i]),S)
   l=1;c[l]=1;Λ[l]=Δ[l];u[l]=one(Perm{T})
+# @show Λ
   res=Perm{T}[]
   while true
     gl=prod(u[l:-1:1])
@@ -338,7 +355,7 @@ function search(S::Stabchain{T},test,property;all=true)where T
       u[l]=S[l].δ[γ]
       gl=u[l]*gl
     end
-#   @show gl
+#   @show gl,c
     if l==k && test(gl,k) && property(gl) 
       if !all return gl
       else push!(res,gl)
@@ -361,30 +378,63 @@ const debug=Ref(false)
 
 function Groups.stabilizer(W::PermGroup,b::AbstractVector{<:Integer},::typeof(onsets))
   if debug[] println("using stabilizer(PG,Vec{I},onsets)") end
+  if length(b)<=2
+    res=stabilizer(W,b,ontuples)
+    if length(b)==2
+      p=transporting_elt(W,b,reverse(b),ontuples)
+      if !isnothing(p) push!(gens(res),p) end
+    end
+    return Groups.weedgens(res)
+  end
+  b=sort(b)
   S=stabchain(W,b)
   test(g,l)=all(i->b[i]^g in b,1:min(l,length(b)))
-  property(g)=all(s->s^g in b,b)
+  property(g)=onsets(b,g)==b
   Groups.weedgens(Group(search(S,test,property)))
 end
 
+if false
 function Groups.stabilizer(W::PermGroup,g::Perm)
   if debug[] println("using stabilizer(PG,Perm)") end
-  S=get_stabchain(W)
+  cc=orbits(g,1:largest_moved_point(W),trivial=true)
+  sort!(cc,by=length)
+  d=Dict{Int,Tuple{Int,Int,Int}}()
+  for i in eachindex(cc), (j,k) in enumerate(cc[i])
+    d[k]=(length(cc[i]),i,j)
+  end
+  S=stabchain(W,vcat(cc...))
   b=base(S)
-  test(h,l)=all(i->b[i]^(inv(h)*g)==b[i]^(g*inv(h)),1:min(l,length(b)))
+  function test(h,l)
+    if l>length(b) return test(h,l-1) end
+    if d[b[l]^h][1]!=d[b[l]][1] return false end
+    nb=Set()
+    nhb=Set()
+    for j in 1:l-1
+      push!(nb,d[b[j]][2])
+      push!(nhb,d[b[j]^h][2])
+      if length(nb)!=length(nhb) return false end
+      if d[b[j]][2]==d[b[l]][2] && 
+       ((d[b[j]][3]-d[b[l]][3])-(d[b[j]^h][3]-d[b[l]^h][3]))%d[b[j]][1]!=0
+        return false
+      end
+    end
+    if l>1 return test(h,l-1) end
+    return true
+  end
   property(h)=g^h==g
   Groups.weedgens(Group(search(S,test,property)))
 end
-
-function Groups.stabilizer(W::PermGroup,p::AbstractVector{<:Perm},::typeof(onsets))
-  if debug[] println("using stabilizer(PG,Vec{Perm},onsets)") end
-  S=get_stabchain(W)
-  b=base(S)
-  test(h,l)=all(g1->any(g->all(i->b[i]^(inv(h)*g1)==b[i]^(g*inv(h)),1:min(l,length(b))),p),p)
-  property(g)=onsets(p,g)==p
-  res=Group(search(S,test,property))
-  Groups.weedgens(res)
 end
+
+#function Groups.stabilizer(W::PermGroup,p::AbstractVector{<:Perm},::typeof(onsets))
+#  if debug[] println("using stabilizer(PG,Vec{Perm},onsets)") end
+#  S=get_stabchain(W)
+#  b=base(S)
+#  test(h,l)=all(g1->any(g->all(i->b[i]^(inv(h)*g1)==b[i]^(g*inv(h)),1:min(l,length(b))),p),p)
+#  property(g)=onsets(p,g)==p
+#  res=Group(search(S,test,property))
+#  Groups.weedgens(res)
+#end
 
 function Groups.transporting_elt(W::PermGroup,b::AbstractVector{<:Integer},b1::AbstractVector{<:Integer},::typeof(ontuples))
   if debug[] println("using transp(PG,Vec{Int},Vec{Int},ontuples)") end
@@ -402,21 +452,21 @@ function Groups.transporting_elt(W::PermGroup,b::AbstractVector{<:Integer},b1::A
   search(S,test,property;all=false)
 end
 
-function Groups.transporting_elt(W::PermGroup,g::Perm,g1::Perm)
-  if debug[] println("using transp(PG,perm,perm)") end
-  S=get_stabchain(W)
-  b=base(S)
-  test(h,l)=all(i->b[i]^(inv(h)*g)==b[i]^(g1*inv(h)),1:min(l,length(b)))
-  property(h)=g^h==g1
-  search(S,test,property;all=false)
-end
+#function Groups.transporting_elt(W::PermGroup,g::Perm,g1::Perm)
+#  if debug[] println("using transp(PG,perm,perm)") end
+#  S=get_stabchain(W)
+#  b=base(S)
+#  test(h,l)=all(i->b[i]^(inv(h)*g)==b[i]^(g1*inv(h)),1:min(l,length(b)))
+#  property(h)=g^h==g1
+#  search(S,test,property;all=false)
+#end
 
 # only difference with general method is sorting
 function Groups.elements(C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
   sort(orbit(C.G,C.representative))
 end
 
-" The cycle types of C on each orbit of C.G"
+" The cycle types of conjugacy class `C` on each orbit of `C.G`"
 function cycletypes(C::ConjugacyClass{T,TW})where{T,TW<:Union{Group{<:Perm},NormalCoset{<:Perm,<:Group}}}
   get!(C,:cycletypes)do
     cycletypes(C.G,C.representative)
