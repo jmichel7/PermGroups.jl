@@ -174,17 +174,17 @@ commutator(a,b)=comm(a,b)
 `ontuples(t,g)`
 
 Assume  that `t` is a  `Vector` or a `NTuple`.  `ontuples` is the action of
-`g` given by `(s,g)->s.^g`.
+`g` given by `(t,g)->map(x->x^g,t)`.
 """
-ontuples(t,g)=t.^g
+ontuples(t,g)=map(x->x^g,t)
 
 """
 `onsets(s,g)`
 
 Assume that `s` is a set, represented as a sorted list without repetitions.
-`onsets` is the  action  of  `g`  given  by  `(s,g)->sort(s.^g)`.
+`onsets` is the action of `g` given by `(s,g)->sort!(map(x->x^g,s))`.
 """
-onsets(s,g)=sort!(s.^g)
+onsets(s,g)=sort!(map(x->x^g,s))
 
 """
 `orbit(gens::AbstractVector,p,action::Function=^)`
