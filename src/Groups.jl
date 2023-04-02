@@ -21,11 +21,11 @@ julia> ngens(G)
 2
 
 julia> minimal_words(G)
-Dict{Perm{Int16}, Vector{Int64}} with 6 entries:
+OrderedDict{Perm{Int16}, Vector{Int64}} with 6 entries:
   ()      => []
   (1,2)   => [1]
-  (1,3)   => [1, 2]
   (1,2,3) => [2]
+  (1,3)   => [1, 2]
   (2,3)   => [2, 1]
   (1,3,2) => [2, 2]
 ```
@@ -63,6 +63,7 @@ export Group, centralizer, center, order,
   getp, @GapObj
 
 import ..Perms: orbit, orbits, order # suppress if used as indep. package
+using OrderedCollections: OrderedDict
 #--------------------------------------------------------------------------
 
 """
@@ -239,33 +240,33 @@ orbit(G::Group,pnt,action::F=^) where F<:Function=orbit(gens(G),pnt,action)
 """
 `transversal(G::Group,p,action::Function=^)`
 
-returns  a `Dict` `t` with keys  `orbit(G,p,action)` and where `t[x]` is an
+returns  an `OrderedDict` `t` with keys  `orbit(G,p,action)` and where `t[x]` is an
 element  of  `G`  such  that  `x==action(p,t[x])`.  Like  `orbit`,  it thus
 requires the type of `p` to be hashable.
 
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(2,3));
 julia> transversal(G,1)
-Dict{Int64, Perm{Int16}} with 3 entries:
+OrderedDict{Int64, Perm{Int16}} with 3 entries:
+  1 => ()
   2 => (1,2)
   3 => (1,3,2)
-  1 => ()
 ```
 orbit functions can take any action of `G` as keyword argument
 
 ```julia-repl
 julia> transversal(G,(1,2),ontuples)
-Dict{Tuple{Int64, Int64}, Perm{Int16}} with 6 entries:
-  (3, 2) => (1,3)
+OrderedDict{Tuple{Int64, Int64}, Perm{Int16}} with 6 entries:
   (1, 2) => ()
-  (3, 1) => (1,3,2)
-  (1, 3) => (2,3)
   (2, 1) => (1,2)
+  (1, 3) => (2,3)
+  (3, 1) => (1,3,2)
   (2, 3) => (1,2,3)
+  (3, 2) => (1,3)
 ```
 """
 function transversal(G::Group,pnt,action::F=^) where F<:Function
-  trans=Dict(pnt=>one(G))
+  trans=OrderedDict(pnt=>one(G))
   orb=[pnt]
   for pnt in orb, gen in gens(G)
     img=action(pnt,gen)
@@ -299,14 +300,14 @@ of `p` describes as a word in `gens` an element bringing `p` to `x`.
 
 ```julia-repl
 julia> words_transversal([Perm(1,2),Perm(2,3)],1)
-Dict{Int64, Vector{Int64}} with 3 entries:
+OrderedDict{Int64, Vector{Int64}} with 3 entries:
+  1 => []
   2 => [1]
   3 => [1, 2]
-  1 => []
 ```
 """
 function words_transversal(gens,pnt,action::F=^) where F<:Function
-  trans=Dict(pnt=>Int[])
+  trans=OrderedDict(pnt=>Int[])
   orb=[pnt]
   for pnt in orb, (i,gen) in enumerate(gens)
     img=action(pnt,gen)
@@ -430,11 +431,11 @@ the generators representing it.
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(1,2,3));
 julia> minimal_words(G)
-Dict{Perm{Int16}, Vector{Int64}} with 6 entries:
+OrderedDict{Perm{Int16}, Vector{Int64}} with 6 entries:
   ()      => []
   (1,2)   => [1]
-  (1,3)   => [1, 2]
   (1,2,3) => [2]
+  (1,3)   => [1, 2]
   (2,3)   => [2, 1]
   (1,3,2) => [2, 2]
 ```
@@ -442,7 +443,7 @@ Dict{Perm{Int16}, Vector{Int64}} with 6 entries:
 function minimal_words(G::Group{T})where T
   get!(G,:minwords)do
     words_transversal(gens(G),one(G),(x,y)->x*y)
-  end::Dict{T,Vector{Int}}
+  end::OrderedDict{T,Vector{Int}}
 end
 
 """
@@ -483,18 +484,18 @@ are not guaranteed minimal.
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(1,2,3));
 julia> words(G)
-Dict{Perm{Int16}, Vector{Int64}} with 6 entries:
+OrderedDict{Perm{Int16}, Vector{Int64}} with 6 entries:
   ()      => []
   (1,2)   => [1]
-  (1,3)   => [1, 2]
   (1,2,3) => [2]
+  (1,3)   => [1, 2]
   (2,3)   => [2, 1]
   (1,3,2) => [1, 2, 1]
 ```
 """
 function words(G::Group{T})where T
   get!(G,:words)do
-    words=Dict(one(G)=>Int[])
+    words=OrderedDict(one(G)=>Int[])
     for i in eachindex(gens(G))
       nwords=copy(words)
       rw = [one(G)=>Int[]]
@@ -512,14 +513,14 @@ function words(G::Group{T})where T
       words = nwords
     end
     words
-  end::Dict{T,Vector{Int}}
+  end::OrderedDict{T,Vector{Int}}
 end
 
 # returns Dict: (word w, n0 generator such that l(w/G(n0))<l(w)
 # faster than words but longer to retrieve word
 function words2(G::Group{T})where T
   get!(G,:words2)do
-    words=Dict(one(G)=>0)
+    words=OrderedDict(one(G)=>0)
     for i in eachindex(gens(G))
       nwords=copy(words)
       rw=[one(G)=>0]
@@ -536,7 +537,7 @@ function words2(G::Group{T})where T
       words = nwords
     end
     words
-  end::Dict{T,Int}
+  end::OrderedDict{T,Int}
 end
 
 "`word(G::Group,w)` a minimal word in `gens(G)` representing element `w` of `G`"
@@ -642,6 +643,8 @@ function classreps(G::Group{T}) where T
     getproperty.(conjugacy_classes(G),:representative)
   end::Vector{T}
 end
+
+const class_representatives=classreps
 
 """
 `number_of_conjugacy_classes(G::Group)` or `nconjugacy_classes`

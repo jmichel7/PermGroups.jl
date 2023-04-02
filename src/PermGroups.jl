@@ -10,12 +10,12 @@ Group((1,2),(2,3))
 # PermGroups are iterators over their elements
 julia> collect(G)
 6-element Vector{Perm{Int16}}:
+ ()
  (1,2)
  (1,3,2)
- ()
+ (2,3)
  (1,2,3)
  (1,3)
- (2,3)
 
 julia> largest_moved_point(G)  # maximum moved point of any element of `G`
 3
@@ -77,6 +77,7 @@ module PermGroups
 using Reexport
 include("Perms.jl"); @reexport using .Perms
 include("Groups.jl"); @reexport using .Groups
+@reexport using OrderedCollections: OrderedDict
 using Combinat: tally, collectby
 export PermGroup, symmetric_group, reduced, stab_onmats, onmats, on_classes,
        get_stabchain, stabchain, Stabchain, Stablink
@@ -255,7 +256,7 @@ function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
   for x in gens(G) 
     if all(b->b^x==b,B) push!(B,smallest_moved_point(x)) end
   end
-  S=Stablink{T,PG{T},trans==transversal ? Dict{T,Perm{T}} : trans{T,Perm{T}}}[]
+  S=Stablink{T,PG{T},trans==transversal ? OrderedDict{T,Perm{T}} : trans{T,Perm{T}}}[]
   for i in eachindex(B)
     C=Group(filter(g->all(b->b^g==b,B[1:i-1]),gens(G)))
     t=trans(C,B[i])
@@ -302,7 +303,7 @@ end
 function get_stabchain(G::PermGroup{T})where T
   get!(G,:stabchain)do
     stabchain(G,T[])
-  end::Vector{Stablink{T,PG{T},Dict{T,Perm{T}}}}
+  end::Vector{Stablink{T,PG{T},OrderedDict{T,Perm{T}}}}
 end
 
 function Base.in(g::Perm,G::PermGroup)

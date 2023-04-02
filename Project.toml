@@ -2,14 +2,17 @@ name = "PermGroups"
 uuid = "0b63354f-98d5-4b2f-8b91-7408084ca26b"
 authors = ["Jean Michel <jean.michel@imj-prg.fr>"]
 version = "0.2.8"
-[compat]
-julia = "1"
-Combinat = "0.0.3, 0.0.4, 0.0.5, 0.0.6"
-Reexport="1"
 
 [deps]
 Combinat = "a6b051d1-fc4b-4ede-b53e-347fa9fb9a74"
+OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+
+[compat]
+Combinat = "0.0.3, 0.0.4, 0.0.5, 0.0.6"
+OrderedCollections = "1"
+Reexport = "1"
+julia = "1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

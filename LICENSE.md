@@ -1,4 +1,4 @@
-The UsingMerge.jl package is licensed under the MIT "Expat" License:
+The PermGroups.jl package is licensed under the MIT "Expat" License:
 
     Copyright (c) 2021: Jean Michel
 
