@@ -609,6 +609,8 @@ function elements(C::ConjugacyClass{T}) where T
   end::Vector{T}
 end
 
+Base.length(C::ConjugacyClass)=length(elements(C))
+
 Base.in(x,C::ConjugacyClass)=x in elements(C)
 
 "`conjugacy_class(G::Group,g)` the class of `g`"

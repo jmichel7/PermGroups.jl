@@ -141,24 +141,6 @@ function SchreierTransversal(G::PermGroup{T},p::Integer)where T
   SchreierTransversal(res,gens(G))
 end
 
-function Groups.extend_transversal!(t::SchreierTransversal,G::PermGroup)
-  new=filter(!iszero(t.v[i]),eachindex(t.v))
-  append!(t.gg,setdiff(gens(g),t.gg))
-  while true
-    n=copy(new)
-    empty!(new)
-    for p in n, i in eachindex(t.gg)
-      q=p^t.gg[i]
-      if t[q]==0
-        t[q]=i
-        push!(new,q)
-      end
-    end
-    if isempty(new) break end
-  end
-  t
-end
-
 Base.haskey(t::SchreierTransversal,k::Integer)=k<=length(t.v) && !iszero(t.v[k])
 
 function Base.getindex(t::SchreierTransversal,k::Integer)
@@ -175,6 +157,24 @@ function Base.getindex(t::SchreierTransversal,k::Integer)
     g=t.gg[p]
     res=g*res
   end
+end
+
+function Groups.extend_transversal!(t::SchreierTransversal,G::PermGroup)
+  new=filter(i->!iszero(t.v[i]),eachindex(t.v))
+  append!(t.gg,setdiff(gens(G),t.gg))
+  while true
+    n=copy(new)
+    empty!(new)
+    for p in n, i in eachindex(t.gg)
+      q=p^t.gg[i]
+      if t[q]==0
+        t[q]=i
+        push!(new,q)
+      end
+    end
+    if isempty(new) break end
+  end
+  t
 end
 
 Base.length(t::SchreierTransversal)=count(!iszero,t.v)
@@ -483,7 +483,7 @@ function positions_class(W::Union{Group{<:Perm},NormalCoset{<:Perm,<:Group}},w)
   cl=conjugacy_classes(W)
   l=findall(C->cycletypes(C)==ct,cl)
   if length(l)==1 return l end
-  if W isa Coset Z=centralizer(center(Group(W)),W.phi)
+  if W isa NormalCoset Z=centralizer(center(Group(W)),W.phi)
   else Z=center(W) end
   for c in filter(!isone,elements(Z))
     l=filter(i->cycletypes(W,cl[i].representative.*c)==cycletypes(W,w*c),l)
@@ -519,7 +519,7 @@ on_classes(G, aut)=Perm(map(c->position_class(G,c^aut),classreps(G)))
 
 function Base.in(C::ConjugacyClass{T,TW},w::T)where{T,TW<:PermGroup}
   r=searchsortedfirst(elements(C),w)
-  r<=length(C) && elments(C)[r]==w
+  r<=length(C) && elements(C)[r]==w
 end
 
 #-------------- iteration on product of lists of group elements ---------------
