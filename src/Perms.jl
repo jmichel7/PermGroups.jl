@@ -723,9 +723,9 @@ julia> Perm([0,2,4],[4,0,2])
 ```
 """
 function Perm{T}(l::AbstractVector,l1::AbstractVector)where T<:Integer
-  p=sortperm(l)
-  p1=sortperm(l1)
-@inbounds if view(l,p)==view(l1,p1) Perm{T}(p1)\Perm{T}(p) end
+  p=sortPerm(T,l)
+  p1=sortPerm(T,l1)
+@inbounds if view(l,p.d)==view(l1,p1.d) p1\p end
 end
 
 Perm(l::AbstractVector,l1::AbstractVector)=Perm{Idef}(l,l1)
