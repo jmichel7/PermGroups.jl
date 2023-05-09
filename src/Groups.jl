@@ -97,16 +97,17 @@ false
 julia> s.b="hello"
 "hello"
 
-julia> s.b
-"hello"
-
 julia> haskey(s,:b)
 true
+
+julia> s.b
+"hello"
 ```
 The dynamic fields are stored in the field `.prop` of `G`, which is of type
 `Dict{Symbol,  Any}()`.  This  explains  the  extra  argument needed in the
 constructor.  The name is because it mimics a GAP record, but perhaps there
-could be a better name.
+could be a better name. The methods the `GapObj` inherits from its field
+`prop` are `haskey`, `getindex`, `delete!` and `get!`.
 """
 macro GapObj(e)
   push!(e.args[3].args,:(prop::Dict{Symbol,Any}))
@@ -121,6 +122,7 @@ macro GapObj(e)
    :(Base.setproperty!(o::$T,s::Symbol,v)=getfield(o,:prop)[s]=v),
    :(Base.haskey(o::$T,s::Symbol)=haskey(getfield(o,:prop),s)),
    :(Base.getindex(o::$T,s::Symbol)=getindex(getfield(o,:prop),s)),
+   :(Base.delete!(o::$T,s::Symbol)=delete!(getfield(o,:prop),s)),
    :(Base.get!(f::Function,o::$T,s::Symbol)=get!(f,getfield(o,:prop),s))))
 end
 
