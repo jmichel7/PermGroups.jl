@@ -574,10 +574,11 @@ Base.length(G::Group)=length(words2(G))
 """
 `order(G::Group)` the number of elements of `G`.
 
-`order(T,G)` do the computation with the integer type `T`.
+`order(T<:Integer,G::Group)` do the computation with the integer type `T`
+  (useful when a `BigInt` is needed to hold the result).
 """
 order(G::Group)=length(G)
-order(::Type{T},G::Group) where T=length(T,G)
+order(::Type{T},G::Group) where T<:Integer=length(T,G)
 
 @GapObj struct ConjugacyClass{T,TW}
   G::TW

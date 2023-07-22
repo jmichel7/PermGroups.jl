@@ -146,13 +146,14 @@ julia> vec(p)
 struct Perm{T<:Integer}
   d::Vector{T}
 end
-Perm(v)=Perm(collect(v))
 
 const Idef=Int16 # you can change the default type T for Perm here
 
 Base.vec(a::Perm)=a.d
 
 #---------------- Constructors ---------------------------------------
+Perm(v::AbstractVector{<:Integer})=Perm(collect(v))
+
 """
    `Perm{T}(x::Integer...)where T<:Integer`
 
