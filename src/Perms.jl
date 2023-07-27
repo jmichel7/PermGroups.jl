@@ -394,19 +394,16 @@ Base.:^(a::Perm, n::Integer)=n>=0 ? Base.power_by_squaring(a,n) :
 returns `l` permuted by `p`, a vector `r` such that `r[i^p]==l[i]`
 
 ```julia-repl
-julia> permute([5,4,6,1,7,5],Perm(1,3,5,6,4))
-6-element Vector{Int64}:
- 1
- 4
- 5
- 5
+julia> permute([5,4,6],Perm(1,2,3))
+3-element Vector{Int64}:
  6
- 7
+ 5
+ 4
 ```
 note   that  `permute`   is  defined   such  it   is  an  action  that  is,
-`permute(permute(l,p),q)==permute(l,p*q)` but this has the consequence that
-`sort(a)==permute(a,inv(Perm(sortperm(a))))` and that
-`invpermute!(l,vec(p))` changes `l` to `permute(l,p)`.
+`permute(permute(l,p),q)==permute(l,p*q)`    but    this    implies    that
+`sort(a)==permute(a,inv(sortPerm(a)))` and that
+`permute(l,p)==invpermute!(l,vec(p))`.
 """
 function permute(l::AbstractVector,a::Perm)
   res=similar(l)
@@ -425,32 +422,32 @@ permutes  by `p` the rows, columns or  both of the matrix `m` depending on
 the value of `dims`.
 
 ```julia-repl
-julia> m=[3*i+j for i in 0:2,j in 1:3]
-3×3 Matrix{Int64}:
- 1  2  3
- 4  5  6
- 7  8  9
+julia> m=reshape(1:9,3,3)
+3×3 reshape(::UnitRange{Int64}, 3, 3) with eltype Int64:
+ 1  4  7
+ 2  5  8
+ 3  6  9
 
 julia> p=Perm(1,2,3)
 (1,2,3)
 
 julia> permute(m,p)
 3×3 Matrix{Int64}:
- 7  8  9
- 1  2  3
- 4  5  6
+ 3  6  9
+ 1  4  7
+ 2  5  8
 
 julia> permute(m,p;dims=2)
 3×3 Matrix{Int64}:
- 3  1  2
- 6  4  5
- 9  7  8
+ 7  1  4
+ 8  2  5
+ 9  3  6
 
 julia> permute(m,p;dims=(1,2))
 3×3 Matrix{Int64}:
- 9  7  8
- 3  1  2
- 6  4  5
+ 9  3  6
+ 7  1  4
+ 8  2  5
 ```
 """
 function permute(m::AbstractMatrix,a::Perm;dims=1)
@@ -466,20 +463,21 @@ end
 permutes the rows of `m` by `p1` and the columns of `m` by `p2`.
 
 ```julia-repl
-julia> m=[1 2 3;4 5 6;7 8 9]
-3×3 Matrix{Int64}:
- 1  2  3
- 4  5  6
- 7  8  9
+julia> m=reshape(1:9,3,3)
+3×3 reshape(::UnitRange{Int64}, 3, 3) with eltype Int64:
+ 1  4  7
+ 2  5  8
+ 3  6  9
 
 julia> permute(m,Perm(1,2),Perm(2,3))
 3×3 Matrix{Int64}:
- 4  6  5
- 1  3  2
- 7  9  8
+ 2  8  5
+ 1  7  4
+ 3  9  6
 ```
 """
-permute(m::AbstractMatrix,p1::Perm,p2::Perm)=m[permute(axes(m,1),p1),permute(axes(m,2),p2)]
+permute(m::AbstractMatrix,p1,p2)=permute(permute(m,p1;dims=1),p2;dims=2)
+
 #---------------------- cycles -------------------------
 
 # 20% slower than GAP CyclePermInt for randPerm(1000)
