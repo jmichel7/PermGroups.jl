@@ -161,7 +161,7 @@ Perm(v::AbstractVector{<:Integer})=Perm(collect(v))
    `(1,2,3)` as a `Perm{Int8}`. If omitted `{T}` is taken to be `{$Idef}`.
 """
 function Perm{T}(x::Vararg{<:Integer,N};degree=0)where {T<:Integer,N}
-  if isempty(x) return Perm(T[]) end
+  if isempty(x) return Perm(collect(T(1):T(degree))) end
   d=T.(1:(degree==0 ? maximum(x) : degree))
   for i in 1:length(x)-1
     d[x[i]]=x[i+1]
@@ -260,7 +260,7 @@ function Perm{T}(m::AbstractMatrix{<:Integer}) where T<:Integer
 end
 
 #---------------------------------------------------------------------
-Base.one(p::Perm)=Perm(empty(p.d))
+Base.one(p::Perm{T}) where T=Perm(;degree=length(p.d))
 Base.one(::Type{Perm{T}}) where T=Perm(T[])
 Base.isone(p::Perm)=@inbounds all(i->p.d[i]==i,eachindex(p.d))
 Base.copy(p::Perm)=Perm(copy(p.d))
