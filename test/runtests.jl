@@ -1,20 +1,17 @@
 # auto-generated tests from julia-repl docstrings
 using Test, PermGroups
-function mytest(file::String,src::String,man::String)
-  println(file," ",src)
-  omit=src[end]==';'
-  src=replace(src,"\\\\"=>"\\")
-  exec=repr(MIME("text/plain"),eval(Meta.parse(src)),context=:limit=>true)
-  if omit exec="nothing" end
-  exec=replace(exec,r" *(\n|$)"s=>s"\1")
-  exec=replace(exec,r"\n$"s=>"")
-  man=replace(man,r" *(\n|$)"s=>s"\1")
-  man=replace(man,r"\n$"s=>"")
-  i=1
-  while i<=lastindex(exec) && i<=lastindex(man) && exec[i]==man[i]
-    i=nextind(exec,i)
+function mytest(file::String,cmd::String,man::String)
+  println(file," ",cmd)
+  exec=repr(MIME("text/plain"),eval(Meta.parse(cmd)),context=:limit=>true)
+  if endswith(cmd,";") exec="nothing" 
+  else exec=replace(exec,r"\s*$"m=>"")
+       exec=replace(exec,r"\s*$"s=>"")
   end
   if exec!=man 
+    i=1
+    while i<=lastindex(exec) && i<=lastindex(man) && exec[i]==man[i]
+      i=nextind(exec,i)
+    end
     print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
   end
   exec==man
@@ -60,7 +57,7 @@ end
 @test mytest("Groups.jl","h=Hom(S,T,[T(1),T(1)])","Hom(Group((1,2),(2,3))→ Group((1,2));[(1,2), (2,3)]↦ [(1,2), (1,2)]")
 @test mytest("Groups.jl","h(S(1,2))","()")
 @test mytest("Groups.jl","G=Group([[-1 -1;1 0]])","Group([[-1 -1; 1 0]])")
-@test mytest("Groups.jl","elements(G)","3-element Vector{Matrix{Int64}}:\n [0 1; -1 -1]\n [1 0; 0 1]\n [-1 -1; 1 0]")
+@test mytest("Groups.jl","elements(G)","3-element Vector{Matrix{Int64}}:\n [1 0; 0 1]\n [-1 -1; 1 0]\n [0 1; -1 -1]")
 end
 @testset "PermGroups.jl" begin
 @test mytest("PermGroups.jl","G=Group([Perm(i,i+1) for i in 1:2])","Group((1,2),(2,3))")
@@ -87,7 +84,7 @@ end
 @test mytest("Perms.jl","a*b","(1,3,2,4)")
 @test mytest("Perms.jl","inv(a)","(1,3,2)")
 @test mytest("Perms.jl","a/b","(3,4)")
-@test mytest("Perms.jl","a\\\\b","(1,4)")
+@test mytest("Perms.jl","a\\b","(1,4)")
 @test mytest("Perms.jl","a^b","(2,3,4)")
 @test mytest("Perms.jl","b^2","(1,3)(2,4)")
 @test mytest("Perms.jl","1^a","2")
@@ -103,19 +100,19 @@ end
 @test mytest("Perms.jl","Matrix(Perm(2,3,4),5)","5×5 Matrix{Bool}:\n 1  0  0  0  0\n 0  0  1  0  0\n 0  0  0  1  0\n 0  1  0  0  0\n 0  0  0  0  1")
 @test mytest("Perms.jl","m=[0 1 0;0 0 1;1 0 0]","3×3 Matrix{Int64}:\n 0  1  0\n 0  0  1\n 1  0  0")
 @test mytest("Perms.jl","Perm(m)","(1,2,3)")
-@test mytest("Perms.jl","permute([5,4,6,1,7,5],Perm(1,3,5,6,4))","6-element Vector{Int64}:\n 1\n 4\n 5\n 5\n 6\n 7")
-@test mytest("Perms.jl","m=[3*i+j for i in 0:2,j in 1:3]","3×3 Matrix{Int64}:\n 1  2  3\n 4  5  6\n 7  8  9")
+@test mytest("Perms.jl","permute([5,4,6],Perm(1,2,3))","3-element Vector{Int64}:\n 6\n 5\n 4")
+@test mytest("Perms.jl","m=reshape(1:9,3,3)","3×3 reshape(::UnitRange{Int64}, 3, 3) with eltype Int64:\n 1  4  7\n 2  5  8\n 3  6  9")
 @test mytest("Perms.jl","p=Perm(1,2,3)","(1,2,3)")
-@test mytest("Perms.jl","permute(m,p)","3×3 Matrix{Int64}:\n 7  8  9\n 1  2  3\n 4  5  6")
-@test mytest("Perms.jl","permute(m,p;dims=2)","3×3 Matrix{Int64}:\n 3  1  2\n 6  4  5\n 9  7  8")
-@test mytest("Perms.jl","permute(m,p;dims=(1,2))","3×3 Matrix{Int64}:\n 9  7  8\n 3  1  2\n 6  4  5")
-@test mytest("Perms.jl","m=[1 2 3;4 5 6;7 8 9]","3×3 Matrix{Int64}:\n 1  2  3\n 4  5  6\n 7  8  9")
-@test mytest("Perms.jl","permute(m,Perm(1,2),Perm(2,3))","3×3 Matrix{Int64}:\n 4  6  5\n 1  3  2\n 7  9  8")
+@test mytest("Perms.jl","permute(m,p)","3×3 Matrix{Int64}:\n 3  6  9\n 1  4  7\n 2  5  8")
+@test mytest("Perms.jl","permute(m,p;dims=2)","3×3 Matrix{Int64}:\n 7  1  4\n 8  2  5\n 9  3  6")
+@test mytest("Perms.jl","permute(m,p;dims=(1,2))","3×3 Matrix{Int64}:\n 9  3  6\n 7  1  4\n 8  2  5")
+@test mytest("Perms.jl","m=reshape(1:9,3,3)","3×3 reshape(::UnitRange{Int64}, 3, 3) with eltype Int64:\n 1  4  7\n 2  5  8\n 3  6  9")
+@test mytest("Perms.jl","permute(m,Perm(1,2),Perm(2,3))","3×3 Matrix{Int64}:\n 2  8  5\n 1  7  4\n 3  9  6")
 @test mytest("Perms.jl","orbits(Perm(1,2)*Perm(4,5),1:5)","3-element Vector{Vector{Int16}}:\n [1, 2]\n [3]\n [4, 5]")
 @test mytest("Perms.jl","cycles(Perm(1,2)*Perm(4,5))","2-element Vector{Vector{Int16}}:\n [1, 2]\n [4, 5]")
-@test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5))","2-element Vector{Int64}:\n 2\n 2")
-@test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5);trivial=true)","3-element Vector{Int64}:\n 2\n 2\n 1")
-@test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5);trivial=true,domain=1:6)","4-element Vector{Int64}:\n 2\n 2\n 1\n 1")
+@test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5);trivial=false)","2-element Vector{Int64}:\n 2\n 2")
+@test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5))","3-element Vector{Int64}:\n 2\n 2\n 1")
+@test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5);domain=1:6)","4-element Vector{Int64}:\n 2\n 2\n 1\n 1")
 @test mytest("Perms.jl","restricted(Perm(1,2)*Perm(3,4),3:4)","(3,4)")
 @test mytest("Perms.jl","p=mappingPerm([6,7,5])","(5,6,7)")
 @test mytest("Perms.jl","(5:7).^p","3-element Vector{Int16}:\n 6\n 7\n 5")

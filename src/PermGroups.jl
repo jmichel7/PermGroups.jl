@@ -7,8 +7,7 @@ This  module is a port  of some GAP functionality  on permutation groups. A
 julia> G=Group([Perm(i,i+1) for i in 1:2])
 Group((1,2),(2,3))
 
-# PermGroups are iterators over their elements
-julia> collect(G)
+julia> collect(G) # PermGroups are iterators over their elements
 6-element Vector{Perm{Int16}}:
  ()
  (1,2)
@@ -652,7 +651,7 @@ end
 Groups.Group(a::Perm...)=Group(collect(a))
 
 " `symmetric_group(n::Int)`  The symmetric group of degree n"
-symmetric_group(n::Int)=Group([Perm(i,i+1) for i in 1:n-1])
+symmetric_group(n::Int)=Group([Perm(i,i+1) for i in 1:n-1],Perm(;degree=n))
 
 #---------------- application to matrices ------------------------------
 """

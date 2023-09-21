@@ -846,9 +846,9 @@ Group([[-1 -1; 1 0]])
 
 julia> elements(G)
 3-element Vector{Matrix{Int64}}:
- [0 1; -1 -1]
  [1 0; 0 1]
  [-1 -1; 1 0]
+ [0 1; -1 -1]
 ```
 """
 function Group(a::AbstractVector{T}) where T

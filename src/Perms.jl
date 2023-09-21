@@ -109,12 +109,12 @@ to  the same images. They have methods `cmp`, `isless` (lexicographic order
 on   moved  points)  so  they  can  be  sorted.  `Perm`s  are  scalars  for
 broadcasting.
 
-Other   methods   on   permutations   are  `cycles,  cycletype,  reflength,
+Other  methods on  permutations are  `cycles, cycletype, reflection_length,
 mappingPerm, sortPerm, Perm_rowcol`.
 
 No  method is given in  this package to enumerate  `Perm`s; you can use the
-method   `arrangements`  from   `Combinat`  or   iterate  the  elements  of
-`symmetric_group` with `PermGroups`.
+method  `permutations` from `Combinat`,  iterate `Combinat.Permutations` or
+iterate the elements of `symmetric_group` from `PermGroups`.
 """
 module Perms
 
@@ -553,27 +553,27 @@ function Base.show(io::IO, ::MIME"text/plain", p::Perm{T})where T
 end
 
 """
-`cycletype(a::Perm;domain=1:length(a.d),trivial=false)`
+`cycletype(a::Perm;domain=1:length(a.d),trivial=true)`
 
 returns  the  partition  of  `maximum(domain)`  associated to the conjugacy
 class of `a` in the symmetric group of `domain`, with ones removed (thus it
-does  not  depend  on  `domain`  but  just  on  the  moved  points)  unless
-`trivial=true`.
+does   not  depend   on  `domain`   but  just   on  the  moved  points)  if
+`trivial=false`.
 
 # Example
 ```julia-repl
-julia> cycletype(Perm(1,2)*Perm(4,5))
+julia> cycletype(Perm(1,2)*Perm(4,5);trivial=false)
 2-element Vector{Int64}:
  2
  2
 
-julia> cycletype(Perm(1,2)*Perm(4,5);trivial=true)
+julia> cycletype(Perm(1,2)*Perm(4,5))
 3-element Vector{Int64}:
  2
  2
  1
 
-julia> cycletype(Perm(1,2)*Perm(4,5);trivial=true,domain=1:6)
+julia> cycletype(Perm(1,2)*Perm(4,5);domain=1:6)
 4-element Vector{Int64}:
  2
  2
@@ -581,7 +581,7 @@ julia> cycletype(Perm(1,2)*Perm(4,5);trivial=true,domain=1:6)
  1
 ```
 """
-function cycletype(a::Perm;domain=1:length(a.d),trivial=false)
+function cycletype(a::Perm;domain=1:length(a.d),trivial=true)
   lengths=Int[]
   if isempty(domain) return lengths end
   to_visit=fill(false,max(length(a.d),maximum(domain)))
