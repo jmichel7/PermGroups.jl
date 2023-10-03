@@ -480,18 +480,18 @@ permute(m::AbstractMatrix,p1,p2)=permute(permute(m,p1;dims=1),p2;dims=2)
 
 #---------------------- cycles -------------------------
 
-# 20% slower than GAP CyclePermInt for randPerm(1000)
 """
 `orbit(a::Perm,i::Integer)` returns the orbit of `a` on `i`.
 """
 function orbit(a::Perm,i::Integer)
-  res=empty(a.d)
-  sizehint!(res,length(a.d))
+  res=eltype(a.d)[i]
+  if i>length(a.d) return res end
   j=i
+  sizehint!(res,length(a.d))
   while true
-    push!(res,j)
-    j^=a
+    @inbounds j=a.d[j]
     if j==i return res end
+    push!(res,j)
   end
 end
 
@@ -523,7 +523,7 @@ function orbits(a::Perm,domain=1:length(a.d);trivial=true)
   cycles
 end
 
-# 15 times faster than GAP Cycles for randPerm(1000)
+# 20 times faster than GAP Cycles for randPerm(1000)
 """
   `cycles(a::Perm)` returns the non-trivial cycles of `a`
 # Example
@@ -588,13 +588,15 @@ function cycletype(a::Perm;domain=1:length(a.d),trivial=true)
 @inbounds to_visit[domain].=true
 @inbounds for i in eachindex(to_visit)
     if !to_visit[i] continue end
-    j=i
-    l=0
-    while true
-      l+=1
-      to_visit[j]=false
-      j^=a
-      if j==i break end
+    l=1
+    if i<=length(a.d)
+      j=i
+      while true
+        to_visit[j]=false
+        j=a.d[j]
+        if j==i break end
+        l+=1
+      end
     end
     if l>1 || trivial push!(lengths,l) end
   end
