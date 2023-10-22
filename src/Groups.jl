@@ -397,8 +397,8 @@ Group((3,4),(1,2))
 function stabilizer(G::Group,p,action=^)
   t=transversal(G,p,action)
   if length(t)==1 return G end
-  C=[wx*s/t[action(x,s)] for (x,wx) in t for s in gens(G)] #Schreier generators
-  Group(unique!(sort(C)))
+  C=unique(wx*s/t[action(x,s)] for (x,wx) in t for s in gens(G))
+  Group(C) #Schreier generators
 end
 
 function stabilizer(G::Group,p,::typeof(ontuples))
