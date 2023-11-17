@@ -119,7 +119,8 @@ macro GapObj(e)
    e,
    :(Base.getproperty(o::$T,s::Symbol)=hasfield($T,s) ? getfield(o,s) :
          getfield(o,:prop)[s]),
-   :(Base.setproperty!(o::$T,s::Symbol,v)=getfield(o,:prop)[s]=v),
+   :(Base.setproperty!(o::$T,s::Symbol,v)=hasfield($T,s) ? setfield!(o,s,v) :
+         getfield(o,:prop)[s]=v),
    :(Base.haskey(o::$T,s::Symbol)=haskey(getfield(o,:prop),s)),
    :(Base.getindex(o::$T,s::Symbol)=getindex(getfield(o,:prop),s)),
    :(Base.propertynames(o::$T)=(fieldnames($T)...,Tuple(keys(getfield(o,:prop)))...)),
