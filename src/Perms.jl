@@ -202,7 +202,7 @@ macro perm_str(s::String)
 end
 
 """
-just for fun: Perm[1 2;5 6 7;4 9]=perm"(1,2)(5,6,7)(4,9)"
+just for fun: Perm[1 2;4 9;5 6 7]=perm"(1,2)(4,9)(5,6,7)"
 """
 function Base.typed_hvcat(::Type{Perm},a::Tuple{Vararg{Int,N} where N},
   b::Vararg{Number,N} where N)
@@ -311,13 +311,13 @@ end
 " `largest_moved_point(a::Perm)` is the largest integer moved by a"
 function largest_moved_point(a::Perm{T})where T
   p=findlast(x->a.d[x]!=x,eachindex(a.d))
-  return isnothing(p) ? T(0) : T(p)
+  isnothing(p) ? T(0) : T(p)
 end
 
 " `smallest_moved_point(a::Perm)` is the smallest integer moved by a"
 function smallest_moved_point(a::Perm{T})where T
   p=findfirst(x->a.d[x]!=x,eachindex(a.d))
-  if !isnothing(p) return T(p) end
+  isnothing(p) ? T(0) : T(p)
 end
 
 " `support(a::Perm)` is the set of all points moved by `a`"
@@ -360,7 +360,7 @@ end
 "`preimage(i::Integer,p::Perm)` the preimage of `i` by `p`"
 function preimage(i::Integer,p::Perm{T})where T
   p=findfirst(==(i),p.d)
-  if isnothing(p) return T(i) else return T(p) end
+  isnothing(p) ? T(i) : T(p)
 end
 
 # less allocations than inv(a)*b
