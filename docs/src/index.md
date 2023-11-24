@@ -13,8 +13,8 @@ Perm(::AbstractMatrix{<:Integer})
 Perm(::AbstractVector, ::AbstractVector)
 Perm(::AbstractMatrix, ::AbstractMatrix)
 @perm_str
-largest_moved_point(::Perm)
-smallest_moved_point
+last_moved(::Perm)
+first_moved
 preimage
 permute
 sortPerm
@@ -76,7 +76,7 @@ NormalCoset
 # Permutation groups
 ```@docs
 PermGroups
-largest_moved_point(::PermGroup)
+last_moved(::PermGroup)
 in(::Perm,::PermGroup)
 on_classes
 symmetric_group

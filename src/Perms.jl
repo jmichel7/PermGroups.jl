@@ -11,20 +11,20 @@ permutations of different  degrees  can  be  multiplied (the result has the
 larger  degree). Two permutations  are equal if  and only if  they move the
 same points in the same way, so two permutations of different degree can be
 equal; the degree is thus an implementation detail so usually it should not
-be used. One should rather use the function `largest_moved_point`.
+be used. One should rather use the function `last_moved`.
 
 This  design makes it  easy to multiply  permutations coming from different
 groups, like a group and one of its subgroups. It has a negligible overhead
 compared to the design where the degree is fixed.
 
 The default constructor for a permutation uses the list of images of `1:n`,
-like  `Perm([2,3,1,5,4])`.  Often  it  is  more  convenient  to  use  cycle
+like  `Perm([2,3,1,5,4,6])`.  Often  it  is  more  convenient  to use cycle
 decompositions:    the   above   permutation    has   cycle   decomposition
 `(1,2,3)(4,5)`    thus   can   be    written   `Perm(1,2,3)*Perm(4,5)`   or
 `perm"(1,2,3)(4,5)"`  (this last form  can parse a  permutation coming from
 GAP  or the default printing at the REPL).  The list of images of `1:n` can
-be  recovered from the  permutation by the  function `vec`; note that equal
-permutations with different degrees will have different `vec`.
+be  recovered from the permutation by  the function `perm`; note that equal
+permutations with different degrees will have different `perm`.
 
 The  complete type of a permutation  is `Perm{T}` where `T<:Integer`, where
 `Vector{T}`  is the type of the vector which holds the image of `1:n`. This
@@ -40,13 +40,13 @@ when multiplying.
 julia> a=Perm(1,2,3)
 (1,2,3)
 
-julia> vec(a)
+julia> perm(a)
 3-element Vector{Int16}:
  2
  3
  1
 
-julia> a==Perm(vec(a))
+julia> a==Perm(perm(a))
 true
 
 julia> b=Perm(1,2,3,4)
@@ -82,10 +82,10 @@ julia> sign(a) # signature of permutation
 julia> order(a) # order (least trivial power) of permutation
 3
 
-julia> largest_moved_point(a)
+julia> last_moved(a)
 3
 
-julia> smallest_moved_point(a)
+julia> first_moved(a)
 1
 
 julia> Perm{Int8}(a) # convert a to Perm{Int8}
@@ -110,7 +110,7 @@ on   moved  points)  so  they  can  be  sorted.  `Perm`s  are  scalars  for
 broadcasting.
 
 Other  methods on  permutations are  `cycles, cycletype, reflection_length,
-mappingPerm, sortPerm, Perm_rowcol`.
+mappingPerm, restricted, support, sortPerm, Perm_rowcol, preimage, randPerm`.
 
 No  method is given in  this package to enumerate  `Perm`s; you can use the
 method  `permutations` from `Combinat`,  iterate `Combinat.Permutations` or
@@ -118,10 +118,10 @@ iterate the elements of `symmetric_group` from `PermGroups`.
 """
 module Perms
 
-export restricted, orbit, orbits, order, Perm, largest_moved_point, cycles,
-  cycletype, support, @perm_str, smallest_moved_point, preimage,
+export restricted, orbit, orbits, order, Perm, last_moved, cycles,
+  cycletype, support, @perm_str, first_moved, preimage,
   reflength, reflection_length,
-  mappingPerm, sortPerm, Perm_rowcol, randPerm, permute
+  mappingPerm, sortPerm, Perm_rowcol, randPerm, permute, perm
 
 using Combinat: tally, collectby, arrangements
 
@@ -135,7 +135,7 @@ A  Perm represents a permutation  of the set `1:n`  and is implemented by a
 julia> p=Perm(Int16[1,3,2,4])
 (2,3)
 
-julia> vec(p)
+julia> perm(p)
 4-element Vector{Int16}:
  1
  3
@@ -149,7 +149,7 @@ end
 
 const Idef=Int16 # you can change the default type T for Perm here
 
-Base.vec(a::Perm)=a.d
+perm(a::Perm)=a.d
 
 #---------------- Constructors ---------------------------------------
 Perm(v::AbstractVector{<:Integer})=Perm(collect(v))
@@ -215,9 +215,9 @@ function Base.typed_hvcat(::Type{Perm},a::Tuple{Vararg{Int,N} where N},
 end
 
 """
-`Matrix(a::Perm,n=length(a.d))`
-the  permutation matrix  for `a`  operating on  `n` points (by default, the
-degree of `a`). If given, `n` should be larger than `largest_moved_point(a)`.
+`Matrix(a::Perm,n=last_moved(a))`
+the  permutation matrix  for `a`  operating on  `n` points (by default,
+`last_moved(a)`). If given, `n` should be larger than `last_moved(a)`.
 
 ```julia-repl
 julia> Matrix(Perm(2,3,4),5)
@@ -229,7 +229,7 @@ julia> Matrix(Perm(2,3,4),5)
  0  0  0  0  1
 ```
 """
-Base.Matrix(a::Perm,n=length(a.d))=[j==i^a for i in 1:n, j in 1:n]
+Base.Matrix(a::Perm,n=last_moved(a))=[j==i^a for i in 1:n, j in 1:n]
 
 """
 `Perm{T}(m::AbstractMatrix)`
@@ -251,11 +251,10 @@ Perm(m::AbstractMatrix{<:Integer})=Perm{Idef}(m)
 
 function Perm{T}(m::AbstractMatrix{<:Integer}) where T<:Integer
   if size(m,1)!=size(m,2) error("matrix should be square") end
-  if any(x->count(!iszero,x)!=1,eachrow(m))
+  l=map(x->findfirst(!iszero,x),eachrow(m))
+  if any(x->count(!iszero,x)!=1,eachrow(m)) || !isperm(l)
     error("not a permutation matrix")
   end
-  l=map(x->findfirst(!iszero,x),eachrow(m))
-  if !isperm(l) error("not a permutation matrix") end
   Perm{T}(l)
 end
 
@@ -308,19 +307,19 @@ function Base.:(==)(a::Perm, b::Perm)
   a.d==b.d
 end
 
-" `largest_moved_point(a::Perm)` is the largest integer moved by a"
-function largest_moved_point(a::Perm{T})where T
-  p=findlast(x->a.d[x]!=x,eachindex(a.d))
+" `last_moved(a::Perm)` is the largest integer moved by a"
+function last_moved(a::Perm{T})where T
+  @inbounds p=findlast(x->a.d[x]!=x,eachindex(a.d))
   isnothing(p) ? T(0) : T(p)
 end
 
-" `smallest_moved_point(a::Perm)` is the smallest integer moved by a"
-function smallest_moved_point(a::Perm{T})where T
+" `first_moved(a::Perm)` is the smallest integer moved by a"
+function first_moved(a::Perm{T})where T
   p=findfirst(x->a.d[x]!=x,eachindex(a.d))
   isnothing(p) ? T(0) : T(p)
 end
 
-" `support(a::Perm)` is the set of all points moved by `a`"
+" `support(a::Perm)` is the sorted list of all points moved by `a`"
 support(a::Perm{T}) where T=(T(1):T(length(a.d)))[[x!=y for (x,y) in enumerate(a.d)]]
 # faster than findall(x->a.d[x]!=x,eachindex(a.d))
 
@@ -382,8 +381,8 @@ end
 # I do not know how to do this one faster
 Base.:/(a::Perm, b::Perm)=a*inv(b)
 
-@inline Base.:^(n::Integer, a::Perm{T}) where T=
-  n>length(a.d) ? T(n) : @inbounds a.d[n]
+@inline Base.:^(n::T, a::Perm) where T<:Integer=
+  n>length(a.d) ? n : @inbounds T(a.d[n])
 
 Base.:^(a::Perm, n::Integer)=n>=0 ? Base.power_by_squaring(a,n) :
                                     Base.power_by_squaring(inv(a),-n)
@@ -403,7 +402,7 @@ julia> permute([5,4,6],Perm(1,2,3))
 note   that  `permute`   is  defined   such  it   is  an  action  that  is,
 `permute(permute(l,p),q)==permute(l,p*q)`    but    this    implies    that
 `sort(a)==permute(a,inv(sortPerm(a)))` and that
-`permute(l,p)==invpermute!(l,vec(p))`.
+`permute(l,p)==invpermute!(l,perm(p))`.
 """
 function permute(l::AbstractVector,a::Perm)
   res=similar(l)
@@ -484,21 +483,22 @@ permute(m::AbstractMatrix,p1,p2)=permute(permute(m,p1;dims=1),p2;dims=2)
 `orbit(a::Perm,i::Integer)` returns the orbit of `a` on `i`.
 """
 function orbit(a::Perm,i::Integer)
-  res=eltype(a.d)[i]
+  res=[i]
   if i>length(a.d) return res end
-  j=i
   sizehint!(res,length(a.d))
+  j=i
   while true
-    @inbounds j=a.d[j]
+    j^=a
     if j==i return res end
     push!(res,j)
   end
 end
 
 """
-`orbits(a::Perm,d::Vector=1:length(a.d))`
+`orbits(a::Perm,d::AbstractVector)`
 
-returns the orbits of `a` on domain `d`
+returns  the orbits of `a` on domain `d`, which should be a union of orbits
+of `a`.
 
 # Example
 ```julia-repl
@@ -509,18 +509,18 @@ julia> orbits(Perm(1,2)*Perm(4,5),1:5)
  [4, 5]
 ```
 """
-function orbits(a::Perm,domain=1:length(a.d);trivial=true)
-  cycles=Vector{eltype(a.d)}[]
-  if length(domain)==0 return cycles end
-  to_visit=falses(max(length(a.d),maximum(domain)))
+function orbits(a::Perm,domain;trivial=true)
+  orbs=Vector{eltype(domain)}[]
+  if isempty(domain) return orbs end
+  to_visit=falses(maximum(domain))
 @inbounds  to_visit[domain].=true
   for i in eachindex(to_visit)
     if !to_visit[i] continue end
     cyc=orbit(a,i)
 @inbounds  to_visit[cyc].=false
-    if length(cyc)>1 || trivial push!(cycles,cyc) end
+    if length(cyc)>1 || trivial push!(orbs,cyc) end
   end
-  cycles
+  orbs
 end
 
 # 20 times faster than GAP Cycles for randPerm(1000)
@@ -534,7 +534,7 @@ julia> cycles(Perm(1,2)*Perm(4,5))
  [4, 5]
 ```
 """
-cycles(a::Perm)=orbits(a;trivial=false)
+cycles(a::Perm{T}) where T=orbits(a,T(1):T(last_moved(a));trivial=false)
 
 function Base.show(io::IO, a::Perm)
   if !isperm(a.d) error("malformed permutation") end
@@ -552,28 +552,74 @@ function Base.show(io::IO, ::MIME"text/plain", p::Perm{T})where T
   show(io,p)
 end
 
-"""
-`cycletype(a::Perm;domain=1:length(a.d),trivial=true)`
+#--- CycleLengths is an iterator on the cycle lengths of a permutation
+struct CycleLengths{T}
+  a::Perm{T}
+  to_visit::Vector{Bool}
+  function CycleLengths(a::Perm{T},domain=1:last_moved(a))where T
+    to_visit=fill(false,maximum(domain;init=0))
+@inbounds to_visit[domain].=true
+    new{T}(a,to_visit)
+  end
+end
 
-returns  the  partition  of  `maximum(domain)`  associated to the conjugacy
-class of `a` in the symmetric group of `domain`, with ones removed (thus it
-does   not  depend   on  `domain`   but  just   on  the  moved  points)  if
-`trivial=false`.
+Base.IteratorSize(x::CycleLengths)=Base.SizeUnknown()
+Base.eltype(x::CycleLengths)=Int
+
+function Base.iterate(c::CycleLengths)
+@inbounds for i in eachindex(c.to_visit)
+    if !c.to_visit[i] continue end
+    l=1
+    j=i
+    while true
+@inbounds c.to_visit[j]=false
+      j^=c.a
+      if j==i return l,i end
+      l+=1
+    end
+  end
+end
+  
+function Base.iterate(c::CycleLengths,k)
+  for i in k:length(c.to_visit)
+@inbounds if !c.to_visit[i] continue end
+    l=1
+    j=i
+    while true
+@inbounds  c.to_visit[j]=false
+      j^=c.a
+      if j==i return l,i end
+      l+=1
+    end
+  end
+end
+  
+"""
+`cycletype(a::Perm,domain::AbstractVector{<:Integer};trivial=true)`
+
+`domain`  should be  a union  of orbits  of `a`.  Returns the  partition of
+`length(domain)`  associated to the conjugacy class of `a` in the symmetric
+group  of `domain`, with ones removed if `trivial=false` (in which case the
+partition does not depend on `domain` but just on `support(a)`)
+
+`cycletype(a::Perm)`
+
+returns `cycletype(a,1:last_moved(a);trivial=false)
 
 # Example
 ```julia-repl
-julia> cycletype(Perm(1,2)*Perm(4,5);trivial=false)
+julia> cycletype(Perm(1,2)*Perm(4,5))
 2-element Vector{Int64}:
  2
  2
 
-julia> cycletype(Perm(1,2)*Perm(4,5))
+julia> cycletype(Perm(1,2)*Perm(4,5),1:5)
 3-element Vector{Int64}:
  2
  2
  1
 
-julia> cycletype(Perm(1,2)*Perm(4,5);domain=1:6)
+julia> cycletype(Perm(1,2)*Perm(4,5),1:6)
 4-element Vector{Int64}:
  2
  2
@@ -581,43 +627,20 @@ julia> cycletype(Perm(1,2)*Perm(4,5);domain=1:6)
  1
 ```
 """
-function cycletype(a::Perm;domain=1:length(a.d),trivial=true)
+cycletype(a::Perm)=cycletype(a,1:last_moved(a);trivial=false)
+
+function cycletype(a::Perm,domain;trivial=true)
   lengths=Int[]
-  if isempty(domain) return lengths end
-  to_visit=fill(false,max(length(a.d),maximum(domain)))
-@inbounds to_visit[domain].=true
-@inbounds for i in eachindex(to_visit)
-    if !to_visit[i] continue end
-    l=1
-    if i<=length(a.d)
-      j=i
-      while true
-        to_visit[j]=false
-        j=a.d[j]
-        if j==i break end
-        l+=1
-      end
-    end
+  for l in CycleLengths(a,domain)
     if l>1 || trivial push!(lengths,l) end
   end
-  sort(lengths,rev=true)
+  sort!(lengths,rev=true)
 end
 
 function order(a::Perm)
   ord=1
-  to_visit=fill(true,length(a.d))
-@inbounds for i in eachindex(to_visit)
-    if to_visit[i]
-      j=i
-      l=0
-      while true
-        l+=1
-        to_visit[j]=false
-        j=a.d[j]
-        if j==i break end
-      end
-      if l>1 ord=lcm(ord,l) end
-    end
+  for l in CycleLengths(a)
+    if l!=1 ord=lcm(ord,l) end
   end
   ord
 end
@@ -630,31 +653,17 @@ points to which `a` belongs is interpreted as a reflection group on a space
 of  dimension `n`), that is, the  minimum number of transpositions of which
 `a` is the product.
 """
-function reflection_length(a::Perm)
-  to_visit=trues(length(a.d))
-  l=0
-  for i in eachindex(to_visit)
-@inbounds if !to_visit[i] continue end
-    j=i
-    while true
-@inbounds to_visit[j]=false
-@inbounds j=Int(a.d[j])
-      if j==i break end
-      l+=1
-    end
-  end
-  l
-end
-
+reflection_length(a::Perm)=sum(i->i-1,CycleLengths(a);init=0)
+  
 const reflength=reflection_length
 
 " `sign(a::Perm)` is the signature of  the permutation `a`"
 Base.sign(a::Perm)=(-1)^reflength(a)
 
 """
-`restricted(a::Perm,l::AbstractVector{<:Integer})`
+`restricted(a::Perm,domain::AbstractVector{<:Integer})`
 
-`l` should be a union of cycles of `p`; returns `p` restricted to `l`
+`domain` should be a union of orbits of `p`; returns `p` restricted to `domain`
 
 ```julia-repl
 julia> restricted(Perm(1,2)*Perm(3,4),3:4)
@@ -662,8 +671,9 @@ julia> restricted(Perm(1,2)*Perm(3,4),3:4)
 ```
 """
 function restricted(a::Perm{T},l::AbstractVector{<:Integer})where T
-  o=orbits(a,l;trivial=false)
-  isempty(o) ? Perm{T}() : prod(c->Perm{T}(c...),o)
+  v=collect(T(1):T(maximum(l)))
+  for i in l v[i]=i^a end
+  Perm(v)
 end
 
 """

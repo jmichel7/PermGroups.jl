@@ -16,7 +16,7 @@ julia> collect(G) # PermGroups are iterators over their elements
  (1,2,3)
  (1,3)
 
-julia> largest_moved_point(G)  # maximum moved point of any element of `G`
+julia> last_moved(G)  # maximum moved point of any element of `G`
 3
 
 julia> orbits(G) # the orbits are orbits on points it moves
@@ -96,17 +96,17 @@ end
 
 Base.one(G::PermGroup)=G.one # PermGroups should have fields gens and one
 
-"`largest_moved_point(G::PermGroup)` the largest moved point by any `g∈ G`"
-function Perms.largest_moved_point(G::PermGroup{T})where T
-  get!(G,:largest_moved)do
-    maximum(largest_moved_point.(gens(G));init=T(0))
+"`last_moved(G::PermGroup)` the largest moved point by any `g∈ G`"
+function Perms.last_moved(G::PermGroup{T})where T
+  get!(G,:last_moved)do
+    maximum(last_moved.(gens(G));init=T(0))
   end::T
 end
 
 " `orbits(G::PermGroup)` the orbits of `G` on its moved points."
 function Perms.orbits(G::PermGroup{T})where T
   get!(G,:orbits)do
-   orbits(G,T(1):largest_moved_point(G);trivial=false)
+   orbits(G,T(1):last_moved(G);trivial=false)
   end::Vector{Vector{T}}
 end
 
@@ -122,7 +122,7 @@ in the orbit of p.
 """
 function SchreierTransversal(G::PermGroup{T},p::Integer)where T
 # T should be a signed type
-  res=zeros(T,max(largest_moved_point(G),p))
+  res=zeros(T,max(last_moved(G),p))
   res[p]=-1
   new=[p]
   while true
@@ -253,7 +253,7 @@ Eick,  O'Brien, section 4.4.2.
 function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
   B=T.(B) # check type and make copy to be able to extend it
   for x in gens(G) 
-    if all(b->b^x==b,B) push!(B,smallest_moved_point(x)) end
+    if all(b->b^x==b,B) push!(B,first_moved(x)) end
   end
   S=Stablink{T,PG{T},trans==transversal ? OrderedDict{T,Perm{T}} : trans{T,Perm{T}}}[]
   for i in eachindex(B)
@@ -270,7 +270,7 @@ function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
       if isone(h) continue end
       for l in i+1:j # now h is in C[l] for those l
         if l>length(S)
-          b=smallest_moved_point(h)
+          b=first_moved(h)
           c=Group(h)
           push!(S,Stablink(b,c,trans(c,b)))
         else
@@ -335,7 +335,7 @@ function search(S::Stabchain{T},test,property;all=true)where T
     return nothing
   end
   base=map(s->s.b,S)
-  n=max(maximum(base),maximum(s->largest_moved_point(s.c),S))
+  n=max(maximum(base),maximum(s->last_moved(s.c),S))
   ord=invperm(vcat(base,setdiff(1:n,base)))
   k=length(S)
   c=fill(0,k)
@@ -396,7 +396,7 @@ end
 if false
 function Groups.stabilizer(W::PermGroup,g::Perm)
   if debug[] println("using stabilizer(PG,Perm)") end
-  cc=orbits(g,1:largest_moved_point(W),trivial=true)
+  cc=orbits(g,1:last_moved(W),trivial=true)
   sort!(cc,by=length)
   d=Dict{Int,Tuple{Int,Int,Int}}()
   for i in eachindex(cc), (j,k) in enumerate(cc[i])
@@ -474,7 +474,7 @@ function cycletypes(C::ConjugacyClass{T,TW})where{T,TW<:Union{Group{<:Perm},Norm
 end
 
 cycletypes(W::Union{Group{<:Perm},NormalCoset{<:Perm,<:Group}},x)=
-  map(o->cycletype(x,domain=o,trivial=true),orbits(W)) # first invariant
+  map(o->cycletype(x,o),orbits(W)) # first invariant
 
 # internal function returning possibly ambiguous result
 function positions_class(W::Union{Group{<:Perm},NormalCoset{<:Perm,<:Group}},w)
@@ -626,16 +626,16 @@ function Groups.NormalCoset(W::PermGroup,phi::Perm=one(W))
   Groups.NormalCosetof(reduced(W,phi),W,Dict{Symbol,Any}())
 end
 
-function Perms.largest_moved_point(G::NormalCoset{<:Perm{T},<:Group})where T
-  get!(G,:largest_moved)do
-    max(largest_moved_point(Group(G)),largest_moved_point(G.phi))
+function Perms.last_moved(G::NormalCoset{<:Perm{T},<:Group})where T
+  get!(G,:last_moved)do
+    max(last_moved(Group(G)),last_moved(G.phi))
   end::T
 end
 
 function Perms.orbits(G::NormalCoset{<:Perm,<:Group})
   get!(G,:orbits)do
     v=vcat([G.phi],gens(Group(G)))
-    orbits(v,1:largest_moved_point(G);trivial=false)
+    orbits(v,1:last_moved(G);trivial=false)
   end::Vector{Vector{Int}}
 end
 
