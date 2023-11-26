@@ -165,7 +165,7 @@ julia> G(2,1,-2) # returns gens(G)[2]*gens(G)[1]/gens(G)[2]
 (1,3)
 ```
 """
-function (W::Group)(w::Vararg{Integer,N}where N)
+function (W::Group)(w::Vararg{Integer,N})where N
   isempty(w) ? one(W) : prod(W(i) for i in w)
 end
 

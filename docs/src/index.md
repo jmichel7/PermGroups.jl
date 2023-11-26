@@ -15,8 +15,9 @@ Perm(::AbstractMatrix, ::AbstractMatrix)
 @perm_str
 last_moved(::Perm)
 first_moved
+perm
 preimage
-permute
+invpermute
 sortPerm
 randPerm
 orbit(::Perm,::Integer)

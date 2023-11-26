@@ -44,7 +44,7 @@ There are efficient methods for `PermGroups` for the functions `in, length,
 elements,   position_class`.  The  function   `on_classes`  determines  the
 permutation  of the conjugacy classes effected by an automorphism. Finally,
 we   give  application  to  the  group   of  simultaneous  row  and  column
-permutations of a matrix: see `onmats, stab_onmats, Perm`.
+permutations of a matrix: see `stab_onmats, Perm`.
 
 finally, benchmarks on julia 1.8
 ```benchmark
@@ -78,7 +78,7 @@ include("Perms.jl"); @reexport using .Perms
 include("Groups.jl"); @reexport using .Groups
 @reexport using OrderedCollections: OrderedDict
 using Combinat: tally, collectby
-export PermGroup, symmetric_group, reduced, stab_onmats, onmats, on_classes,
+export PermGroup, symmetric_group, reduced, stab_onmats, on_classes,
        get_stabchain, stabchain, Stabchain, Stablink
 #-------------------- now permutation groups -------------------------
 abstract type PermGroup{T}<:Group{Perm{T}} end
@@ -654,12 +654,6 @@ Groups.Group(a::Perm...)=Group(collect(a))
 symmetric_group(n::Int)=Group([Perm(i,i+1) for i in 1:n-1],Perm(;degree=n))
 
 #---------------- application to matrices ------------------------------
-"""
-`onmats(m::AbstractMatrix,g::Perm)` synonym for `permute(m,g;dims=(1,2))`
-or `permute(m,g,g)`.
-"""
-onmats(m,g)=permute(m,g,g)
-
 function invblocks(m,extra=nothing)
   if isnothing(extra) extra=zeros(Int,size(m,1)) end
   blk1=[collect(axes(m,1))]
@@ -700,7 +694,7 @@ centralizes also `extra`.
 
 ```julia-repl
 julia> stab_onmats((1:30)'.*(1:30).%15)
-Group((10,25),(5,20),(12,27),(3,18),(9,24),(6,21),(13,28),(8,23),(7,22),(2,17),(14,29),(11,26),(4,19),(1,4)(2,8)(3,12)(6,9)(7,13)(11,14)(16,19)(17,23)(18,27)(21,24)(22,28)(26,29),(1,11)(2,7)(4,14)(5,10)(8,13)(16,26)(17,22)(19,29)(20,25)(23,28),(1,16),(15,30))
+Group((1,16),(4,19),(11,26),(14,29),(2,17),(7,22),(8,23),(13,28),(6,21),(9,24),(1,4)(2,8)(3,12)(6,9)(7,13)(11,14)(16,19)(17,23)(18,27)(21,24)(22,28)(26,29),(3,18),(12,27),(1,11)(2,7)(4,14)(5,10)(8,13)(16,26)(17,22)(19,29)(20,25)(23,28),(5,20),(10,25),(15,30))
 ```
 """
 function stab_onmats(M::AbstractMatrix;extra=nothing,verbose=false)
@@ -725,10 +719,10 @@ end
 """
 `Perm_onmats(M, N[, m ,n])`
 
-returns `p` such that `onmats(M,p)=N` if it exists, `nothing` otherwise; so
+returns `p` such that `onmats(N,p)=M` if it exists, `nothing` otherwise; so
 is just an efficient version of
-`transporting_elt(symmetric_group(size(M,1)),M,N,onmats)`  If  in  addition
-the vectors `m` and `n` are given, `p` should satisfy `permute(m,p)=n`.
+`transporting_elt(symmetric_group(size(M,1)),N,M,onmats)`  If  in  addition
+the vectors `m` and `n` are given, `p` should satisfy `invpermute(n,p)=m`.
 """
 function Perm_onmats(M,N,m=nothing,n=nothing;verbose=false)
   if isnothing(m) && M==N return Perm() end
@@ -763,7 +757,7 @@ function Perm_onmats(M,N,m=nothing,n=nothing;verbose=false)
         p=transporting_elt(sg(length(I)),M[I,I],N[J,J],onmats)
       end
       if isnothing(p) return false end
-      I=permute(I,p)
+      I=invpermute(I,p)
       p=mappingPerm(eachindex(I), I)
       return [I,J,Group(gens(stab_onmats(M[I,I];verbose)).^p)] end, iM, iN)
     if false in p return false else return p end
@@ -783,18 +777,18 @@ function Perm_onmats(M,N,m=nothing,n=nothing;verbose=false)
     if M[I,I]!=N[J,J]
       if verbose print("I==$(length(I)) stab==$(length(g)) ") end
       e = transporting_elt(h, M[I,I], N[J,J], onmats)
-      if isnothing(e) return nothing else I=permute(I,e) end
+      if isnothing(e) return nothing else I=invpermute(I,e) end
     end
     h=centralizer(h, M[I,I], onmats)
     g=Group(gens(h).^inv(p))
   end
-  return mappingPerm(I,J)
+  mappingPerm(J,I)
 end
 
 """
   `Perm{T}(m::AbstractMatrix,m1::AbstractMatrix;dims=1)`
 
-returns  `p`, a `Perm{T}`, which permutes the  rows of `m1` (the columns of
+returns  `p`, a `Perm{T}`, which invpermutes the  rows of `m1` (the columns of
 `m1`  if `dims=2`, simultaneously the rows  and columns if `dims=(1,2)`) to
 bring  them  to  those  of  `m`,  if  such  a `p` exists; returns `nothing`
 otherwise.  If not given `{T}` is taken to be `{Int16}`. Needs the elements
@@ -807,9 +801,9 @@ julia> Perm([0 1 0;0 0 1;1 0 0],[1 0 0;0 1 0;0 0 1];dims=1)
 julia> Perm([0 1 0;0 0 1;1 0 0],[1 0 0;0 1 0;0 0 1];dims=2)
 (1,2,3)
 
-julia> m=(1:30)'.*(1:30).%15;
+julia> n=(1:30)'.*(1:30).%15;
 
-julia> n=permute(m,Perm(1,5,2,8,12,4,7)*Perm(3,9,11,6);dims=(1,2));
+julia> m=onmats(n,Perm(1,5,2,8,12,4,7)*Perm(3,9,11,6));
 
 julia> Perm(m,n,dims=(1,2))
 (1,5,2,8,12,4,7)(3,9,11,6)
