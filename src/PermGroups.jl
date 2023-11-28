@@ -679,7 +679,7 @@ function stab_onmats(g::PermGroup{T},M::AbstractMatrix;extra=nothing)where T
   e=Group(map(y->Perm(n,map(x->CartesianIndex(x.I.^y),n)),gens(g)))
   for s in collectby(vec(M),1:length(M)) e=stabilizer(e,s,(p,g)->sort(p.^g)) end
   if isempty(gens(e)) return e end
-  Group(map(p->Perm{T}(map(i->n[i^p][1], axes(M,1))), gens(e)))
+  Group(map(p->Perms.Perm_(map(i->T(n[i^p][1]), axes(M,1))), gens(e)))
 end
 
 """

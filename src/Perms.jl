@@ -24,13 +24,16 @@ decompositions:    the   above   permutation    has   cycle   decomposition
 `perm"(1,2,3)(4,5)"`  (this last form  can parse a  permutation coming from
 GAP  or the default printing at the REPL).  The list of images of `1:n` can
 be  recovered from the permutation by  the function `perm`; note that equal
-permutations with different degrees will have different `perm`.
+permutations  with different degrees will  have different `perm`. Note that
+the  default constructor  tests the  validity of  the input  by calling the
+julia`  function `isperm`. To have a faster constructor which does not test
+the input, use `Perms.Perm_`.
 
 The  complete type of a permutation  is `Perm{T}` where `T<:Integer`, where
 `Vector{T}`  is the type of the vector which holds the image of `1:n`. This
-can  be used to save space or  time. For instance `Perm{UInt8}` can be used
-for  Weyl groups of rank≤8 since they permute  at most 240 roots. If `T` is
-not  specified we  take it  to be  `Int16` since  this is a good compromise
+can be used to save space or time. For instance `Perm{UInt8}(1,2,3)` can be
+used for Weyl groups of rank≤8 since they permute at most 240 roots. If `T`
+is  not specified we take it to be  `Int16` since this is a good compromise
 between   speed,  compactness  and  possible  size  of  `n`.  One  can  mix
 permutations of different integer types; they are promoted to the wider one
 when multiplying.
@@ -133,15 +136,18 @@ const Idef=Int16 # the default type T for Perms
 A  Perm represents a permutation  of the set `1:n`  and is implemented by a
 `struct`  with one field,  a `Vector{T}` holding  the images of `1:n`. When
 showing  a `Perm` at the REPL, the cycle decomposition is displayed as well
-as the type if it is not `$Idef`.
+as the type if it is not `$Idef`. The default constructor checks the input,
+the constructor `Perms.Perm_` does not.
 
 ```julia-repl
-julia> Perm(UInt8[1,3,2,4])
+julia> Perms.Perm_(UInt8[1,3,2,4])
 Perm{UInt8}: (2,3)
 ```
 """
 struct Perm{T<:Integer}
   d::Vector{T}
+# inner constructor that bypasses all checks
+  global Perm_(d::AbstractVector{T}) where T=new{T}(d)
 end
 
 """
@@ -158,7 +164,10 @@ julia> perm(Perm(2,3;degree=4))
 perm(p::Perm)=p.d
 
 #---------------- Constructors ---------------------------------------
-Perm(v::AbstractVector{<:Integer})=Perm(collect(v))
+function Perm(v::AbstractVector{<:Integer})
+  if !isperm(v) error("not a permutation") end
+  Perm_(v)
+end
 
 """
 `Perm{T}(x::Integer...)where T<:Integer`
@@ -167,18 +176,19 @@ returns  a cycle.  For example  `Perm{Int8}(1,2,3)` constructs the cycle
 `(1,2,3)` as a `Perm{Int8}`. If omitted `{T}` is taken to be `{$Idef}`.
 """
 function Perm{T}(x::Vararg{<:Integer,N};degree=0)where {T<:Integer,N}
-  if isempty(x) return Perm(collect(T(1):T(degree))) end
-  d=T.(1:(degree==0 ? maximum(x) : degree))
+  if isempty(x) return Perm_(T(1):T(degree)) end
+  d=T.(1:max(degree,maximum(x)))
   for i in 1:length(x)-1
     d[x[i]]=x[i+1]
   end
   d[x[end]]=x[1]
-  Perm(d)
+  if length(x)>2 && !isperm(d) error("not a permutation") end
+  Perm_(d)
 end
 
 Perm(x::Integer...;degree=0)=Perm{Idef}(x...;degree)
 
-Base.convert(::Type{Perm{T}},p::Perm{T1}) where {T,T1}=T==T1 ? p : Perm(T.(p.d))
+Base.convert(::Type{Perm{T}},p::Perm{T1}) where {T,T1}=T==T1 ? p : Perm_(T.(p.d))
 
 """
    `Perm{T}(p::Perm) where T<:Integer`
@@ -254,14 +264,14 @@ function Perm{T}(m::AbstractMatrix{<:Integer}) where T<:Integer
     !isperm(l) || !all(i->isone(m[i,l[i]]),axes(m,1))
     error("not a permutation matrix")
   end
-  Perm{T}(l)
+  Perm_(T.(l))
 end
 
 #---------------------------------------------------------------------
-Base.one(p::Perm{T}) where T=Perm(;degree=length(p.d))
-Base.one(::Type{Perm{T}}) where T=Perm(T[])
+Base.one(p::Perm{T}) where T=Perm{T}(;degree=length(p.d))
+Base.one(::Type{Perm{T}}) where T=Perm_(T[])
 Base.isone(p::Perm)=@inbounds all(i->p.d[i]==i,eachindex(p.d))
-Base.copy(p::Perm)=Perm(copy(p.d))
+Base.copy(p::Perm)=Perm_(copy(p.d))
 
 # Perms are scalars for broadcasting
 Base.broadcastable(p::Perm)=Ref(p)
@@ -323,7 +333,7 @@ support(a::Perm{T}) where T=(T(1):T(length(a.d)))[[x!=y for (x,y) in enumerate(a
 # faster than findall(x->a.d[x]!=x,eachindex(a.d))
 
 " for convenience: `sortPerm(a)=Perm(sortperm(a))`"
-sortPerm(::Type{T},a::AbstractVector;k...) where T=Perm{T}(sortperm(a;k...))
+sortPerm(::Type{T},a::AbstractVector;k...) where T=Perm_(T.(sortperm(a;k...)))
 sortPerm(a::AbstractVector;k...)=sortPerm(Idef,a;k...)
 
 """
@@ -339,7 +349,7 @@ function Base.:*(a::Perm, b::Perm)
   a,b=promote_degree(a,b)
   r=similar(a.d)
 @inbounds for (i,v) in pairs(a.d) r[i]=b.d[v] end
-  Perm(r)
+  Perm_(r)
 end
 
 # this is a*=b without allocation
@@ -352,7 +362,7 @@ end
 function Base.inv(a::Perm)
   r=similar(a.d)
   @inbounds for (i,v) in pairs(a.d) r[v]=i end
-  Perm(r)
+  Perm_(r)
 end
 
 "`preimage(i::Integer,p::Perm)` the preimage of `i` by `p` (same as image of `i` by `inv(p)` but does not need computing the inverse)."
@@ -366,7 +376,7 @@ function Base.:\(a::Perm, b::Perm)
   a,b=promote_degree(a,b)
   r=similar(a.d)
 @inbounds for (i,v) in pairs(a.d) r[v]=b.d[i] end
-  Perm(r)
+  Perm_(r)
 end
 
 # less allocations than inv(b)*a*b
@@ -374,7 +384,7 @@ function Base.:^(a::Perm, b::Perm)
   a,b=promote_degree(a,b)
   r=similar(a.d)
 @inbounds for (i,v) in pairs(a.d) r[b.d[i]]=b.d[v] end
-  Perm(r)
+  Perm_(r)
 end
 
 # I do not know how to do this one faster
@@ -665,7 +675,7 @@ julia> restricted(Perm(1,2)*Perm(3,4),3:4)
 function restricted(a::Perm{T},l::AbstractVector{<:Integer})where T
   v=collect(T(1):T(maximum(l)))
   for i in l v[i]=i^a end
-  Perm(v)
+  Perm_(v)
 end
 
 """
@@ -689,10 +699,10 @@ julia> (5:7).^p
 """
 mappingPerm(a)=mappingPerm(Idef,a)
 
-function mappingPerm(::Type{T},a)where T
+function mappingPerm(::Type{T},a::AbstractVector{<:Integer})where T
   r=collect(1:maximum(a))
   r[sort(a)]=a
-  Perm{T}(r)
+  Perm_(T.(r))
 end
 
 """
@@ -711,7 +721,7 @@ function mappingPerm(::Type{T},a,b)where T
   r=1:max(maximum(a),maximum(b))
   a=vcat(a,setdiff(r,a))
   b=vcat(b,setdiff(r,b))
-  Perm{T}(a)\Perm{T}(b)
+  Perm_(T.(a))\Perm_(T.(b))
 end
 mappingPerm(a,b)=mappingPerm(Idef,a,b)
 
@@ -731,7 +741,7 @@ julia> Perm([0,2,4],[4,0,2])
 function Perm{T}(l::AbstractVector,l1::AbstractVector)where T<:Integer
   p=sortperm(l)
   p1=sortperm(l1)
-  @inbounds if view(l,p)==view(l1,p1) Perm(T.(p1))\Perm(T.(p)) end
+  @inbounds if view(l,p)==view(l1,p1) Perm_(T.(p1))\Perm_(T.(p)) end
 end
 
 Perm(l::AbstractVector,l1::AbstractVector)=Perm{Idef}(l,l1)
