@@ -22,7 +22,7 @@ This  package  follows  the  design  of  permutations  in the GAP language. `Per
 
 This  design makes it  easy to multiply  permutations coming from different groups, like a group and one of its subgroups. It has a negligible overhead compared to the design where the degree is fixed.
 
-The default constructor for a permutation uses the list of images of `1:n`, like  `Perm([2,3,1,5,4,6])`.  Often  it  is  more  convenient  to use cycle decompositions:    the   above   permutation    has   cycle   decomposition `(1,2,3)(4,5)`    thus   can   be    written   `Perm(1,2,3)*Perm(4,5)`   or `perm"(1,2,3)(4,5)"`  (this last form  can parse a  permutation coming from GAP  or the default printing at the REPL).  The list of images of `1:n` can be  recovered from the permutation by  the function `perm`; note that equal permutations  with different degrees will  have different `perm`. Note that the  default constructor  tests the  validity of  the input  by calling the julia`function`isperm`. To have a faster constructor which does not test the input, use`Perms.Perm_`.
+The default constructor for a permutation uses the list of images of `1:n`, like  `Perm([2,3,1,5,4,6])`.  Often  it  is  more  convenient  to use cycle decompositions:    the   above   permutation    has   cycle   decomposition `(1,2,3)(4,5)`    thus   can   be    written   `Perm(1,2,3)*Perm(4,5)`   or `perm"(1,2,3)(4,5)"`  (this last form  can parse a  permutation coming from GAP  or the default printing at the REPL).  The list of images of `1:n` can be  recovered from the permutation by  the function `perm`; note that equal permutations  with different degrees will  have different `perm`. Note that the  default constructor  tests the  validity of  the input  by calling the `julia` function `isperm`. To have a faster constructor which does not test the input, use `Perms.Perm_`.
 
 The  complete type of a permutation  is `Perm{T}` where `T<:Integer`, where `Vector{T}`  is the type of the vector which holds the image of `1:n`. This can be used to save space or time. For instance `Perm{UInt8}(1,2,3)` can be used for Weyl groups of rank≤8 since they permute at most 240 roots. If `T` is  not specified we take it to be  `Int16` since this is a good compromise between   speed,  compactness  and  possible  size  of  `n`.  One  can  mix permutations of different integer types; they are promoted to the wider one when multiplying.
 
@@ -103,7 +103,7 @@ Other  methods on  permutations are  `cycles, cycletype, reflection_length, mapp
 No  method is given in  this package to enumerate  `Perm`s; you can use the method  `permutations` from `Combinat`,  iterate `Combinat.Permutations` or iterate the elements of `symmetric_group` from `PermGroups`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L1-L121' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L1-L121' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.Perm' href='#PermGroups.Perms.Perm'>#</a>
 **`PermGroups.Perms.Perm`** &mdash; *Type*.
@@ -120,7 +120,7 @@ Perm{UInt8}: (2,3)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L133-L146' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L133-L146' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.Perm-Tuple{Vararg{Integer}}' href='#PermGroups.Perms.Perm-Tuple{Vararg{Integer}}'>#</a>
 **`PermGroups.Perms.Perm`** &mdash; *Method*.
@@ -132,7 +132,7 @@ Perm{UInt8}: (2,3)
 returns  a cycle.  For example  `Perm{Int8}(1,2,3)` constructs the cycle `(1,2,3)` as a `Perm{Int8}`. If omitted `{T}` is taken to be `{Int16}`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L172-L177' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L172-L177' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.Perm-Tuple{AbstractMatrix{<:Integer}}' href='#PermGroups.Perms.Perm-Tuple{AbstractMatrix{<:Integer}}'>#</a>
 **`PermGroups.Perms.Perm`** &mdash; *Method*.
@@ -147,7 +147,7 @@ julia> Perm([0 1 0;0 0 1;1 0 0])
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L249-L258' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L260-L269' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.Perm-Tuple{AbstractVector, AbstractVector}' href='#PermGroups.Perms.Perm-Tuple{AbstractVector, AbstractVector}'>#</a>
 **`PermGroups.Perms.Perm`** &mdash; *Method*.
@@ -164,7 +164,7 @@ julia> Perm([0,2,4],[4,0,2])
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L729-L740' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L738-L749' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.Perm-Tuple{AbstractMatrix, AbstractMatrix}' href='#PermGroups.Perms.Perm-Tuple{AbstractMatrix, AbstractMatrix}'>#</a>
 **`PermGroups.Perms.Perm`** &mdash; *Method*.
@@ -191,7 +191,7 @@ julia> Perm(m,n,dims=(1,2))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/PermGroups.jl#L788-L811' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/PermGroups.jl#L788-L811' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.@perm_str' href='#PermGroups.Perms.@perm_str'>#</a>
 **`PermGroups.Perms.@perm_str`** &mdash; *Macro*.
@@ -200,26 +200,31 @@ julia> Perm(m,n,dims=(1,2))
 
 @perm"..."
 
-make a `Perm` from a string; allows GAP-style `perm"(1,2)(5,6,7)(4,9)"`
+makes a `Perm{Int16}` from a string; allows GAP-style `perm"(1,2)(5,6,7)(4,9)"`. If the cycle decomposition is preceded by `"Perm{T}:"` the constructed  permutation is of type `T`.
+
+```julia-repl
+perm"Perm{UInt8}:(1,2)(3,4)"
+Perm{UInt8}: (1,2)(3,4)
+```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L201-L205' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L201-L212' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.last_moved-Tuple{Perm}' href='#PermGroups.Perms.last_moved-Tuple{Perm}'>#</a>
 **`PermGroups.Perms.last_moved`** &mdash; *Method*.
 
 
 
-`last_moved(a::Perm)` is the largest integer moved by a
-
-
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L319' class='documenter-source'>source</a><br>
-
-
 `last_moved(G::PermGroup)` the largest moved point by any `g∈ G`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/PermGroups.jl#L99' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/PermGroups.jl#L99' class='documenter-source'>source</a><br>
+
+
+`last_moved(a::Perm)` is the largest integer moved by a
+
+
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L330' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.first_moved' href='#PermGroups.Perms.first_moved'>#</a>
 **`PermGroups.Perms.first_moved`** &mdash; *Function*.
@@ -229,7 +234,7 @@ make a `Perm` from a string; allows GAP-style `perm"(1,2)(5,6,7)(4,9)"`
 `first_moved(a::Perm)` is the smallest integer moved by a
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L325' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L336' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.perm' href='#PermGroups.Perms.perm'>#</a>
 **`PermGroups.Perms.perm`** &mdash; *Function*.
@@ -248,7 +253,7 @@ julia> perm(Perm(2,3;degree=4))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L153-L163' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L153-L163' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.preimage' href='#PermGroups.Perms.preimage'>#</a>
 **`PermGroups.Perms.preimage`** &mdash; *Function*.
@@ -258,7 +263,7 @@ julia> perm(Perm(2,3;degree=4))
 `preimage(i::Integer,p::Perm)` the preimage of `i` by `p` (same as image of `i` by `inv(p)` but does not need computing the inverse).
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L368' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L379' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.invpermute' href='#PermGroups.Perms.invpermute'>#</a>
 **`PermGroups.Perms.invpermute`** &mdash; *Function*.
@@ -278,7 +283,7 @@ julia> invpermute([5,4,6],Perm(1,2,3))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L399-L414' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L410-L425' class='documenter-source'>source</a><br>
 
 
 `invpermute(m::AbstractMatrix, p1::Perm,p2::Perm)`
@@ -300,7 +305,7 @@ julia> invpermute(m,Perm(1,2),Perm(2,3))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L425-L443' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L436-L454' class='documenter-source'>source</a><br>
 
 
 `invpermute(m::AbstractMatrix,p::Perm;dims=1)`
@@ -337,7 +342,7 @@ julia> invpermute(m,p;dims=(1,2))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L452-L486' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L463-L497' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.sortPerm' href='#PermGroups.Perms.sortPerm'>#</a>
 **`PermGroups.Perms.sortPerm`** &mdash; *Function*.
@@ -347,7 +352,7 @@ julia> invpermute(m,p;dims=(1,2))
 for convenience: `sortPerm(a)=Perm(sortperm(a))`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L335' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L346' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.randPerm' href='#PermGroups.Perms.randPerm'>#</a>
 **`PermGroups.Perms.randPerm`** &mdash; *Function*.
@@ -357,7 +362,7 @@ for convenience: `sortPerm(a)=Perm(sortperm(a))`
 `randPerm([T,]n::Integer)` a random permutation of `1:n` of type `T`. If omitted `T` is taken to be `Int16`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L339-L342' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L350-L353' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.orbit-Tuple{Perm, Integer}' href='#PermGroups.Perms.orbit-Tuple{Perm, Integer}'>#</a>
 **`PermGroups.Perms.orbit`** &mdash; *Method*.
@@ -367,7 +372,7 @@ for convenience: `sortPerm(a)=Perm(sortperm(a))`
 `orbit(p::Perm,i::Integer)` returns the orbit of `p` on `i`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L496-L498' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L507-L509' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.orbits-Tuple{Perm}' href='#PermGroups.Perms.orbits-Tuple{Perm}'>#</a>
 **`PermGroups.Perms.orbits`** &mdash; *Method*.
@@ -377,7 +382,7 @@ for convenience: `sortPerm(a)=Perm(sortperm(a))`
 `orbits(G::PermGroup)` the orbits of `G` on its moved points.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/PermGroups.jl#L106' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/PermGroups.jl#L106' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.order' href='#PermGroups.Perms.order'>#</a>
 **`PermGroups.Perms.order`** &mdash; *Function*.
@@ -389,13 +394,13 @@ for convenience: `sortPerm(a)=Perm(sortperm(a))`
 `order(T<:Integer,G::Group)` do the computation with the integer type `T`   (useful when a `BigInt` is needed to hold the result).
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L576-L581' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L576-L581' class='documenter-source'>source</a><br>
 
 
 `order(a)` the smallest integer `i≥1` such that `isone(a^i)`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L664' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L664' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.cycles-Tuple{Perm}' href='#PermGroups.Perms.cycles-Tuple{Perm}'>#</a>
 **`PermGroups.Perms.cycles`** &mdash; *Method*.
@@ -414,7 +419,7 @@ julia> cycles(Perm(1,2)*Perm(4,5))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L543-L552' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L554-L563' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.cycletype-Tuple{Perm}' href='#PermGroups.Perms.cycletype-Tuple{Perm}'>#</a>
 **`PermGroups.Perms.cycletype`** &mdash; *Method*.
@@ -452,7 +457,7 @@ julia> cycletype(Perm(1,2)*Perm(4,5),1:6)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L599-L631' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L608-L640' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.support' href='#PermGroups.Perms.support'>#</a>
 **`PermGroups.Perms.support`** &mdash; *Function*.
@@ -462,7 +467,7 @@ julia> cycletype(Perm(1,2)*Perm(4,5),1:6)
 `support(a::Perm)` is the sorted list of all points moved by `a`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L331' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L342' class='documenter-source'>source</a><br>
 
 <a id='Base.sign' href='#Base.sign'>#</a>
 **`Base.sign`** &mdash; *Function*.
@@ -472,7 +477,7 @@ julia> cycletype(Perm(1,2)*Perm(4,5),1:6)
 `sign(p::Perm)` is the signature of  the permutation `p`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L662' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L671' class='documenter-source'>source</a><br>
 
 <a id='Base.Matrix-Tuple{Perm, Any}' href='#Base.Matrix-Tuple{Perm, Any}'>#</a>
 **`Base.Matrix`** &mdash; *Method*.
@@ -492,7 +497,7 @@ julia> Matrix(Perm(2,3,4),5)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L233-L246' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L244-L257' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.restricted-Tuple{Perm, AbstractVector{<:Integer}}' href='#PermGroups.Perms.restricted-Tuple{Perm, AbstractVector{<:Integer}}'>#</a>
 **`PermGroups.Perms.restricted`** &mdash; *Method*.
@@ -509,7 +514,7 @@ julia> restricted(Perm(1,2)*Perm(3,4),3:4)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L665-L674' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L674-L683' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.reflection_length-Tuple{Perm}' href='#PermGroups.Perms.reflection_length-Tuple{Perm}'>#</a>
 **`PermGroups.Perms.reflection_length`** &mdash; *Method*.
@@ -521,7 +526,7 @@ julia> restricted(Perm(1,2)*Perm(3,4),3:4)
 gives  the  "reflection  length"  of  `p`  (when the symmetric group on `n` points to which `p` belongs is interpreted as a reflection group on a space of  dimension `n`), that is, the  minimum number of transpositions of which `p` is the product.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L650-L657' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L659-L666' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.mappingPerm' href='#PermGroups.Perms.mappingPerm'>#</a>
 **`PermGroups.Perms.mappingPerm`** &mdash; *Function*.
@@ -544,7 +549,7 @@ julia> (5:7).^p
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L681-L699' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L690-L708' class='documenter-source'>source</a><br>
 
 
 `mappingPerm([::Type{T},]a,b)`
@@ -557,7 +562,7 @@ julia> mappingPerm([1,2,5,3],[2,3,4,6])
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L708-L719' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L717-L728' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.Perm_rowcol' href='#PermGroups.Perms.Perm_rowcol'>#</a>
 **`PermGroups.Perms.Perm_rowcol`** &mdash; *Function*.
@@ -595,7 +600,7 @@ true
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L749-L782' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L758-L791' class='documenter-source'>source</a><br>
 
 
 <a id='Groups'></a>
@@ -645,7 +650,7 @@ There  is a constructor of a group with arbitrary type elements, `Group(l)` wher
 for  further information on  the functions defined  in this module, look at the  docstrings of `Group,  gens, ngens, comm,  orbit, orbits, transversal, words_transversal,  centralizer,  stabilizer,  center,  normalizer,  words, minimal_words,   word,  in,   elements,  length,   order,  conjugacy_class, conjugacy_classes, classreps, nconjugacy_classes, fusion_conjugacy_classes, position_class,  isabelian,  iscyclic,  istrivial,  rand, transporting_elt, intersect, Hom, kernel, Coset`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L1-L46' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L1-L46' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.Group' href='#PermGroups.Groups.Group'>#</a>
 **`PermGroups.Groups.Group`** &mdash; *Type*.
@@ -665,7 +670,7 @@ julia> G(2,1,-2) # returns gens(G)[2]*gens(G)[1]/gens(G)[2]
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L152-L167' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L152-L167' class='documenter-source'>source</a><br>
 
 
 `Group(l::AbstractVector{T}[,one]) where T`
@@ -684,7 +689,7 @@ julia> elements(G)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L836-L855' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L836-L855' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.generators' href='#PermGroups.Groups.generators'>#</a>
 **`PermGroups.Groups.generators`** &mdash; *Function*.
@@ -694,7 +699,7 @@ julia> elements(G)
 `gens(G::Group)` or `generators(G::Group)` is the `Vector` of generators of `G`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L144' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L144' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.number_of_generators' href='#PermGroups.Groups.number_of_generators'>#</a>
 **`PermGroups.Groups.number_of_generators`** &mdash; *Function*.
@@ -704,7 +709,7 @@ julia> elements(G)
 `ngens(G::Group)` or `number_of_generators(G::Group)` is the number of generators of `G`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L148' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L148' class='documenter-source'>source</a><br>
 
 <a id='Base.one-Tuple{Group}' href='#Base.one-Tuple{Group}'>#</a>
 **`Base.one`** &mdash; *Method*.
@@ -714,7 +719,7 @@ julia> elements(G)
 `one(G::Group)` returns the identity element of `G`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L139' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L139' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.orders_of_generators' href='#PermGroups.Groups.orders_of_generators'>#</a>
 **`PermGroups.Groups.orders_of_generators`** &mdash; *Function*.
@@ -726,7 +731,7 @@ julia> elements(G)
 The list of orders of the generators (this may be expensive to compute so could be worth being cached in `G`).
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L675-L680' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L675-L680' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.ontuples' href='#PermGroups.Groups.ontuples'>#</a>
 **`PermGroups.Groups.ontuples`** &mdash; *Function*.
@@ -738,7 +743,7 @@ The list of orders of the generators (this may be expensive to compute so could 
 Assume  that `t` is a  `Vector` or a `NTuple`.  `ontuples` is the action of `g` given by `(t,g)->map(x->x^g,t)`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L178-L183' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L178-L183' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.onsets' href='#PermGroups.Groups.onsets'>#</a>
 **`PermGroups.Groups.onsets`** &mdash; *Function*.
@@ -750,7 +755,7 @@ Assume  that `t` is a  `Vector` or a `NTuple`.  `ontuples` is the action of `g` 
 Assume that `s` is a set, represented as a sorted list without repetitions. `onsets` is the action of `g` given by `(s,g)->sort!(map(x->x^g,s))`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L186-L191' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L186-L191' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.orbit-Tuple{AbstractVector, Any}' href='#PermGroups.Perms.orbit-Tuple{AbstractVector, Any}'>#</a>
 **`PermGroups.Perms.orbit`** &mdash; *Method*.
@@ -787,7 +792,7 @@ julia> orbit([Perm(1,2),Perm(2,3)],[1,3],(v,g)->sort(v.^g)) # "OnSets"
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L194-L228' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L194-L228' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.orbits-Tuple{Group, Any}' href='#PermGroups.Perms.orbits-Tuple{Group, Any}'>#</a>
 **`PermGroups.Perms.orbits`** &mdash; *Method*.
@@ -809,7 +814,7 @@ julia> orbits(G,1:4)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L336-L353' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L336-L353' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.elements-Tuple{Group}' href='#PermGroups.Groups.elements-Tuple{Group}'>#</a>
 **`PermGroups.Groups.elements`** &mdash; *Method*.
@@ -819,7 +824,7 @@ julia> orbits(G,1:4)
 `elements(G::Group)` the list of elements of G
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L561' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L561' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.transversal' href='#PermGroups.Groups.transversal'>#</a>
 **`PermGroups.Groups.transversal`** &mdash; *Function*.
@@ -853,7 +858,7 @@ OrderedDict{Tuple{Int64, Int64}, Perm{Int16}} with 6 entries:
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L244-L271' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L244-L271' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.words_transversal' href='#PermGroups.Groups.words_transversal'>#</a>
 **`PermGroups.Groups.words_transversal`** &mdash; *Function*.
@@ -873,7 +878,7 @@ OrderedDict{Int64, Vector{Int64}} with 3 entries:
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L297-L312' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L297-L312' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.centralizer' href='#PermGroups.Groups.centralizer'>#</a>
 **`PermGroups.Groups.centralizer`** &mdash; *Function*.
@@ -891,7 +896,7 @@ Group((2,3))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L356-L366' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L356-L366' class='documenter-source'>source</a><br>
 
 
 `centralizer(G::Group,H::Group)` the centralizer in `G` of the group `H`
@@ -905,7 +910,7 @@ Group((1,2))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L371-L380' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L371-L380' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.center' href='#PermGroups.Groups.center'>#</a>
 **`PermGroups.Groups.center`** &mdash; *Function*.
@@ -923,7 +928,7 @@ Group((1,2)(3,4))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L412-L422' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L412-L422' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.stabilizer' href='#PermGroups.Groups.stabilizer'>#</a>
 **`PermGroups.Groups.stabilizer`** &mdash; *Function*.
@@ -947,7 +952,7 @@ Group((3,4),(1,2))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L383-L398' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L383-L398' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.normalizer' href='#PermGroups.Groups.normalizer'>#</a>
 **`PermGroups.Groups.normalizer`** &mdash; *Function*.
@@ -957,7 +962,7 @@ Group((3,4),(1,2))
 `normalizer(G::Group,H::Group)` the normalizer of `H` in `G`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L134' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L134' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.word-Tuple{Group, Any}' href='#PermGroups.Groups.word-Tuple{Group, Any}'>#</a>
 **`PermGroups.Groups.word`** &mdash; *Method*.
@@ -967,7 +972,7 @@ Group((3,4),(1,2))
 `word(G::Group,w)` a minimal word in `gens(G)` representing element `w` of `G`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L547' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L547' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.comm' href='#PermGroups.Groups.comm'>#</a>
 **`PermGroups.Groups.comm`** &mdash; *Function*.
@@ -977,7 +982,7 @@ Group((3,4),(1,2))
 `comm(a,b)` or `commutator(a,b)` is `a^-1*b^-1*a*b`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L174' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L174' class='documenter-source'>source</a><br>
 
 <a id='Base.length-Tuple{Group}' href='#Base.length-Tuple{Group}'>#</a>
 **`Base.length`** &mdash; *Method*.
@@ -989,7 +994,7 @@ Group((3,4),(1,2))
 `length(T,G)` do the computation with the integer type `T`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L569-L573' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L569-L573' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.classreps-Tuple{Group}' href='#PermGroups.Groups.classreps-Tuple{Group}'>#</a>
 **`PermGroups.Groups.classreps`** &mdash; *Method*.
@@ -1001,7 +1006,7 @@ Group((3,4),(1,2))
 representatives  of  conjugacy  classes  of  `G`.  By  default  queries the attribute  `G.classreps`, and if this attribute  is present it will be used by `conjugacy_classes`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L641-L647' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L641-L647' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.conjugacy_classes' href='#PermGroups.Groups.conjugacy_classes'>#</a>
 **`PermGroups.Groups.conjugacy_classes`** &mdash; *Function*.
@@ -1011,7 +1016,7 @@ representatives  of  conjugacy  classes  of  `G`.  By  default  queries the attr
 `conjugacy_classes(G::Group)` conjugacy classes of `G` (as a `Vector{ConjugacyClass}`)
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L594-L597' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L594-L597' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.conjugacy_class' href='#PermGroups.Groups.conjugacy_class'>#</a>
 **`PermGroups.Groups.conjugacy_class`** &mdash; *Function*.
@@ -1021,7 +1026,7 @@ representatives  of  conjugacy  classes  of  `G`.  By  default  queries the attr
 `conjugacy_class(G::Group,g)` the class of `g`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L621' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L621' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.number_of_conjugacy_classes' href='#PermGroups.Groups.number_of_conjugacy_classes'>#</a>
 **`PermGroups.Groups.number_of_conjugacy_classes`** &mdash; *Function*.
@@ -1033,7 +1038,7 @@ representatives  of  conjugacy  classes  of  `G`.  By  default  queries the attr
 the number of conjugacy classes of `G`"
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L656-L660' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L656-L660' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.position_class' href='#PermGroups.Groups.position_class'>#</a>
 **`PermGroups.Groups.position_class`** &mdash; *Function*.
@@ -1043,7 +1048,7 @@ the number of conjugacy classes of `G`"
 `position_class(G::Group,g)` index of conjugacy class to which `g` belongs
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L624' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L624' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.fusion_conjugacy_classes' href='#PermGroups.Groups.fusion_conjugacy_classes'>#</a>
 **`PermGroups.Groups.fusion_conjugacy_classes`** &mdash; *Function*.
@@ -1055,7 +1060,7 @@ the number of conjugacy classes of `G`"
 A `Vector{Int}` telling for each conjugacy class of subgroup `H` of which class of `G` is is a subset
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L631-L636' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L631-L636' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.minimal_words' href='#PermGroups.Groups.minimal_words'>#</a>
 **`PermGroups.Groups.minimal_words`** &mdash; *Function*.
@@ -1079,7 +1084,7 @@ OrderedDict{Perm{Int16}, Vector{Int64}} with 6 entries:
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L429-L446' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L429-L446' class='documenter-source'>source</a><br>
 
 
 `minimal_words(G::Group,w)`
@@ -1096,7 +1101,7 @@ julia> minimal_words(G,Perm(1,3))
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L453-L466' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L453-L466' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.words-Tuple{Group}' href='#PermGroups.Groups.words-Tuple{Group}'>#</a>
 **`PermGroups.Groups.words`** &mdash; *Method*.
@@ -1120,7 +1125,7 @@ OrderedDict{Perm{Int16}, Vector{Int64}} with 6 entries:
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L481-L499' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L481-L499' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.transporting_element' href='#PermGroups.Groups.transporting_element'>#</a>
 **`PermGroups.Groups.transporting_element`** &mdash; *Function*.
@@ -1147,7 +1152,7 @@ julia> transporting_elt(g,[1,2,3,4],[3,4,5,2],(s,g)->s.^g)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L700-L722' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L700-L722' class='documenter-source'>source</a><br>
 
 <a id='Base.intersect-Tuple{Group, Group}' href='#Base.intersect-Tuple{Group, Group}'>#</a>
 **`Base.intersect`** &mdash; *Method*.
@@ -1157,7 +1162,7 @@ julia> transporting_elt(g,[1,2,3,4],[3,4,5,2],(s,g)->s.^g)
 `intersect(G::Group, H::Group)` the intersection as a group
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L771' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L771' class='documenter-source'>source</a><br>
 
 <a id='Base.rand-Tuple{Group}' href='#Base.rand-Tuple{Group}'>#</a>
 **`Base.rand`** &mdash; *Method*.
@@ -1167,7 +1172,7 @@ julia> transporting_elt(g,[1,2,3,4],[3,4,5,2],(s,g)->s.^g)
 `rand(W::Group)` a random element of `W`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L693' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L693' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.isabelian' href='#PermGroups.Groups.isabelian'>#</a>
 **`PermGroups.Groups.isabelian`** &mdash; *Function*.
@@ -1177,7 +1182,7 @@ julia> transporting_elt(g,[1,2,3,4],[3,4,5,2],(s,g)->s.^g)
 `isabelian(G::Group)` whether `G` is abelian
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L684' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L684' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.iscyclic' href='#PermGroups.Groups.iscyclic'>#</a>
 **`PermGroups.Groups.iscyclic`** &mdash; *Function*.
@@ -1187,7 +1192,7 @@ julia> transporting_elt(g,[1,2,3,4],[3,4,5,2],(s,g)->s.^g)
 `iscyclic(G::Group)` whether `G` is cyclic
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L687' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L687' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.istrivial' href='#PermGroups.Groups.istrivial'>#</a>
 **`PermGroups.Groups.istrivial`** &mdash; *Function*.
@@ -1197,7 +1202,7 @@ julia> transporting_elt(g,[1,2,3,4],[3,4,5,2],(s,g)->s.^g)
 `istrivial(G::Group)` whether `G` is trivial
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L690' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L690' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.Hom' href='#PermGroups.Groups.Hom'>#</a>
 **`PermGroups.Groups.Hom`** &mdash; *Type*.
@@ -1223,7 +1228,7 @@ julia> h(S(1,2)) # the image by h
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L781-L800' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L781-L800' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.kernel' href='#PermGroups.Groups.kernel'>#</a>
 **`PermGroups.Groups.kernel`** &mdash; *Function*.
@@ -1233,7 +1238,7 @@ julia> h(S(1,2)) # the image by h
 `kernel(h::Hom)` the kernel of the homomorphism `h`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L815' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L815' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.Coset' href='#PermGroups.Groups.Coset'>#</a>
 **`PermGroups.Groups.Coset`** &mdash; *Type*.
@@ -1250,7 +1255,7 @@ julia> h(S(1,2)) # the image by h
   * `x in C` returns `x/phi in G`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L974-L986' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L974-L986' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Groups.NormalCoset' href='#PermGroups.Groups.NormalCoset'>#</a>
 **`PermGroups.Groups.NormalCoset`** &mdash; *Type*.
@@ -1271,7 +1276,7 @@ The  conjugacy  classes  of  a  normal  coset  `G.phi`  are relative to the conj
 Finally  the function  `G/H` for  two groups  constructs the  quotient as a group of `NormalCoset`s, and `fusion_conjugacy_classes(H::NormalCoset,G::NormalCoset)`   expresses   the fusion of conjugacy classes.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L994-L1016' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L994-L1016' class='documenter-source'>source</a><br>
 
 
 <a id='Permutation-groups'></a>
@@ -1356,23 +1361,23 @@ julia> @btime length(Int128,Group(rubik_gens)) # Gap takes 5ms
 Note  the use of  `Int128` in `length`:  the computation does  not fit in an `Int64`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/PermGroups.jl#L1-L74' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/PermGroups.jl#L1-L74' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.last_moved-Tuple{PermGroup}' href='#PermGroups.Perms.last_moved-Tuple{PermGroup}'>#</a>
 **`PermGroups.Perms.last_moved`** &mdash; *Method*.
 
 
 
-`last_moved(a::Perm)` is the largest integer moved by a
-
-
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L319' class='documenter-source'>source</a><br>
-
-
 `last_moved(G::PermGroup)` the largest moved point by any `g∈ G`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/PermGroups.jl#L99' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/PermGroups.jl#L99' class='documenter-source'>source</a><br>
+
+
+`last_moved(a::Perm)` is the largest integer moved by a
+
+
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L330' class='documenter-source'>source</a><br>
 
 <a id='Base.in-Tuple{Perm, PermGroup}' href='#Base.in-Tuple{Perm, PermGroup}'>#</a>
 **`Base.in`** &mdash; *Method*.
@@ -1382,7 +1387,7 @@ Note  the use of  `Int128` in `length`:  the computation does  not fit in an `In
 `x in G` for `G` a group: whether `x` is an element of `G`
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Groups.jl#L566' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Groups.jl#L566' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.on_classes' href='#PermGroups.on_classes'>#</a>
 **`PermGroups.on_classes`** &mdash; *Function*.
@@ -1402,7 +1407,7 @@ Perm{Int64}: (2,4)(3,7)(6,8)
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/PermGroups.jl#L502-L516' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/PermGroups.jl#L502-L516' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.symmetric_group' href='#PermGroups.symmetric_group'>#</a>
 **`PermGroups.symmetric_group`** &mdash; *Function*.
@@ -1412,7 +1417,7 @@ Perm{Int64}: (2,4)(3,7)(6,8)
 `symmetric_group(n::Int)`  The symmetric group of degree n
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/PermGroups.jl#L653' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/PermGroups.jl#L653' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perms.onmats' href='#PermGroups.Perms.onmats'>#</a>
 **`PermGroups.Perms.onmats`** &mdash; *Function*.
@@ -1422,7 +1427,7 @@ Perm{Int64}: (2,4)(3,7)(6,8)
 `onmats(m::AbstractMatrix,g::Perm)` synonym for `invpermute(m,g;dims=(1,2))` or `invpermute(m,g,g)`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/Perms.jl#L446-L449' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/Perms.jl#L457-L460' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.stab_onmats' href='#PermGroups.stab_onmats'>#</a>
 **`PermGroups.stab_onmats`** &mdash; *Function*.
@@ -1439,7 +1444,7 @@ Group((1,16),(4,19),(11,26),(14,29),(2,17),(7,22),(8,23),(13,28),(6,21),(9,24),(
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/PermGroups.jl#L685-L699' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/PermGroups.jl#L685-L699' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.Perm_onmats' href='#PermGroups.Perm_onmats'>#</a>
 **`PermGroups.Perm_onmats`** &mdash; *Function*.
@@ -1451,7 +1456,7 @@ Group((1,16),(4,19),(11,26),(14,29),(2,17),(7,22),(8,23),(13,28),(6,21),(9,24),(
 returns `p` such that `onmats(N,p)=M` if it exists, `nothing` otherwise; so is just an efficient version of `transporting_elt(symmetric_group(size(M,1)),N,M,onmats)`  If  in  addition the vectors `m` and `n` are given, `p` should satisfy `invpermute(n,p)=m`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/PermGroups.jl#L719-L726' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/PermGroups.jl#L719-L726' class='documenter-source'>source</a><br>
 
 <a id='PermGroups.ProdIterator' href='#PermGroups.ProdIterator'>#</a>
 **`PermGroups.ProdIterator`** &mdash; *Type*.
@@ -1463,5 +1468,5 @@ A  `ProdIterator([i₁,…,iₙ])`  takes  a  list  `i₁,…,iₙ`  of  iterato
 It is used internally for iterating over a permutation group.
 
 
-<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/4b1dc6c905ad47c77dbc871e25121d09d8ba905c/src/PermGroups.jl#L525-L532' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/PermGroups.jl/blob/914e8fb0d1c0e21c7ec1cf7cfa4157d871125c90/src/PermGroups.jl#L525-L532' class='documenter-source'>source</a><br>
 

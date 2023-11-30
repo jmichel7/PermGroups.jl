@@ -26,7 +26,7 @@ GAP  or the default printing at the REPL).  The list of images of `1:n` can
 be  recovered from the permutation by  the function `perm`; note that equal
 permutations  with different degrees will  have different `perm`. Note that
 the  default constructor  tests the  validity of  the input  by calling the
-julia`  function `isperm`. To have a faster constructor which does not test
+`julia` function `isperm`. To have a faster constructor which does not test
 the input, use `Perms.Perm_`.
 
 The  complete type of a permutation  is `Perm{T}` where `T<:Integer`, where
@@ -201,18 +201,29 @@ Perm{T}(p::Perm) where {T<:Integer}=convert(Perm{T},p)
 """
   @perm"..."
 
-make a `Perm` from a string; allows GAP-style `perm"(1,2)(5,6,7)(4,9)"`
+makes a `Perm{$Idef}` from a string; allows GAP-style `perm"(1,2)(5,6,7)(4,9)"`.
+If the cycle decomposition is preceded by `"Perm{T}:"` the constructed 
+permutation is of type `T`.
+
+```julia-repl
+perm"Perm{UInt8}:(1,2)(3,4)"
+Perm{UInt8}: (1,2)(3,4)
+```
 """
 macro perm_str(s::String)
-  start=1
   s=replace(s,"\\n"=>"\n")
-  res=Perm()
+  if (m=match(r"^Perm{(\w*)}:",s))!=nothing
+    T=eval(Meta.parse(m[1]))
+    s=s[m.match.ncodeunits+1:end]
+  else T=Idef
+  end
+  res=Perm{T}()
   if match(r"^\s*\(\s*\)\s*$",s)!==nothing return res end
-  while match(r"^\s*$"s,s[start:end])===nothing
-    m=match(r"^\s*\((\s*\d+\s*,)+\s*\d+\)"s,s[start:end])
+  while match(r"^\s*$"s,s)===nothing
+    m=match(r"^\s*\((\s*\d+\s*,)+\s*\d+\)"s,s)
     if m===nothing error("malformed permutation: ",s) end
-    start+=m.match.ncodeunits
-    res*=Perm(Meta.parse(replace(m.match,r"\s*"=>"")).args...)
+    s=s[m.match.ncodeunits+1:end]
+    res*=Perm{T}(Meta.parse(replace(m.match,r"\s*"=>"")).args...)
   end
   res::Perm
 end
@@ -552,20 +563,18 @@ julia> cycles(Perm(1,2)*Perm(4,5))
 """
 cycles(a::Perm{T}) where T=orbits(a,T(1):T(last_moved(a));trivial=false)
 
-function Base.show(io::IO, a::Perm)
+function Base.show(io::IO, a::Perm{T})where T
   if !isperm(a.d) error("malformed permutation") end
   hasdecor=get(io,:limit,false)||get(io,:TeX,false)
   if !hasdecor print(io,"perm\"") end
+  if T!=Idef && get(io,:typeinfo,nothing) in (Any, nothing)
+    print(io,typeof(a),": ")
+  end
   cyc=cycles(a)
   if isempty(cyc) print(io,"()")
   else for c in cyc print(io,"(",join(c,","),")") end
   end
   if !hasdecor print(io,"\"") end
-end
-
-function Base.show(io::IO, ::MIME"text/plain", p::Perm{T})where T
-  if T!=Idef && !haskey(io,:typeinfo) print(io,typeof(p),": ") end
-  show(io,p)
 end
 
 #--- CycleLengths is an iterator on the cycle lengths of a permutation
