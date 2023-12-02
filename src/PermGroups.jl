@@ -511,10 +511,10 @@ julia> W=Group(Perm(1,2),Perm(2,3),Perm(4,5),Perm(5,6))
 Group((1,2),(2,3),(4,5),(5,6))
 
 julia> on_classes(W,Perm(1,4,2,5,3,6))
-Perm{Int64}: (2,4)(3,7)(6,8)
+(2,4)(3,7)(6,8)
 ```
 """
-on_classes(G, aut)=Perm(map(c->position_class(G,c^aut),classreps(G)))
+on_classes(G, aut)=Perm(Perms.Idef.(map(c->position_class(G,c^aut),classreps(G))))
 
 function Base.in(C::ConjugacyClass{T,TW},w::T)where{T,TW<:PermGroup}
   r=searchsortedfirst(elements(C),w)

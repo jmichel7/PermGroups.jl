@@ -68,7 +68,7 @@ end
 @test mytest("PermGroups.jl","Perm(1,2,4) in G","false")
 @test mytest("PermGroups.jl","get_stabchain(G)","b:1 c:Group((1,2),(2,3))\n  δ:1=>(),2=>(1,2),3=>(1,3,2)\nb:2 c:Group((2,3))\n  δ:2=>(),3=>(2,3)")
 @test mytest("PermGroups.jl","W=Group(Perm(1,2),Perm(2,3),Perm(4,5),Perm(5,6))","Group((1,2),(2,3),(4,5),(5,6))")
-@test mytest("PermGroups.jl","on_classes(W,Perm(1,4,2,5,3,6))","Perm{Int64}: (2,4)(3,7)(6,8)")
+@test mytest("PermGroups.jl","on_classes(W,Perm(1,4,2,5,3,6))","(2,4)(3,7)(6,8)")
 @test mytest("PermGroups.jl","stab_onmats((1:30)'.*(1:30).%15)","Group((1,16),(4,19),(11,26),(14,29),(2,17),(7,22),(8,23),(13,28),(6,21),(9,24),(1,4)(2,8)(3,12)(6,9)(7,13)(11,14)(16,19)(17,23)(18,27)(21,24)(22,28)(26,29),(3,18),(12,27),(1,11)(2,7)(4,14)(5,10)(8,13)(16,26)(17,22)(19,29)(20,25)(23,28),(5,20),(10,25),(15,30))")
 @test mytest("PermGroups.jl","Perm([0 1 0;0 0 1;1 0 0],[1 0 0;0 1 0;0 0 1];dims=1)","(1,3,2)")
 @test mytest("PermGroups.jl","Perm([0 1 0;0 0 1;1 0 0],[1 0 0;0 1 0;0 0 1];dims=2)","(1,2,3)")

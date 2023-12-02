@@ -27,7 +27,7 @@ be  recovered from the permutation by  the function `perm`; note that equal
 permutations  with different degrees will  have different `perm`. Note that
 the  default constructor  tests the  validity of  the input  by calling the
 `julia` function `isperm`. To have a faster constructor which does not test
-the input, use `Perms.Perm_`.
+the input, use the keyword argument `check=false`.
 
 The  complete type of a permutation  is `Perm{T}` where `T<:Integer`, where
 `Vector{T}`  is the type of the vector which holds the image of `1:n`. This
@@ -130,6 +130,8 @@ using Combinat: tally, collectby, arrangements
 
 const Idef=Int16 # the default type T for Perms
 
+using AbstractPermutations
+
 """
 `struct Perm{T<:Integer}`
 
@@ -137,18 +139,20 @@ A  Perm represents a permutation  of the set `1:n`  and is implemented by a
 `struct`  with one field,  a `Vector{T}` holding  the images of `1:n`. When
 showing  a `Perm` at the REPL, the cycle decomposition is displayed as well
 as the type if it is not `$Idef`. The default constructor checks the input,
-the constructor `Perms.Perm_` does not.
+unless the keyword argument `check=false` is given.
 
 ```julia-repl
 julia> Perms.Perm_(UInt8[1,3,2,4])
 Perm{UInt8}: (2,3)
 ```
 """
-struct Perm{T<:Integer}
+struct Perm{T<:Integer}<:AbstractPermutations.AbstractPermutation
   d::Vector{T}
 # inner constructor that bypasses all checks
   global Perm_(d::AbstractVector{T}) where T=new{T}(d)
 end
+
+Base.eltype(p::Perm{T}) where T=T
 
 """
 `perm(p::Perm)` returns the data field of a `Perm`.
@@ -163,9 +167,15 @@ julia> perm(Perm(2,3;degree=4))
 """
 perm(p::Perm)=p.d
 
+AbstractPermutations.degree(p::Perm)=last_moved(p)
+AbstractPermutations.inttype(p::Perm)=eltype(p)
+
+# if uncomment next, AbstractPermutations tests pass
+#Perm{T}(v::AbstractVector{T},check=true) where T<:Integer=Perm(v;check)
+
 #---------------- Constructors ---------------------------------------
-function Perm(v::AbstractVector{<:Integer})
-  if !isperm(v) error("not a permutation") end
+function Perm(v::AbstractVector{<:Integer};check=true)
+  if check && !isperm(v) ArgumentError("not a permutation") end
   Perm_(v)
 end
 
@@ -182,7 +192,7 @@ function Perm{T}(x::Vararg{<:Integer,N};degree=0)where {T<:Integer,N}
     d[x[i]]=x[i+1]
   end
   d[x[end]]=x[1]
-  if length(x)>2 && !isperm(d) error("not a permutation") end
+  if length(x)>2 && !isperm(d) ArgumentError("not a permutation") end
   Perm_(d)
 end
 
@@ -221,7 +231,7 @@ macro perm_str(s::String)
   if match(r"^\s*\(\s*\)\s*$",s)!==nothing return res end
   while match(r"^\s*$"s,s)===nothing
     m=match(r"^\s*\((\s*\d+\s*,)+\s*\d+\)"s,s)
-    if m===nothing error("malformed permutation: ",s) end
+    if m===nothing ArgumentError("malformed permutation: ",s) end
     s=s[m.match.ncodeunits+1:end]
     res*=Perm{T}(Meta.parse(replace(m.match,r"\s*"=>"")).args...)
   end
@@ -273,7 +283,7 @@ function Perm{T}(m::AbstractMatrix{<:Integer}) where T<:Integer
   l=map(x->findfirst(!iszero,x),eachrow(m))
   if size(m,1)!=size(m,2) || any(x->count(!iszero,x)!=1,eachrow(m)) || 
     !isperm(l) || !all(i->isone(m[i,l[i]]),axes(m,1))
-    error("not a permutation matrix")
+    ArgumentError("not a permutation matrix")
   end
   Perm_(T.(l))
 end
@@ -577,6 +587,11 @@ function Base.show(io::IO, a::Perm{T})where T
   if !hasdecor print(io,"\"") end
 end
 
+function Base.show(io::IO, ::MIME"text/plain", a::Perm{T}) where T
+#  if T!=Idef print(io,typeof(a),": ") end
+  show(io,a)
+end
+  
 #--- CycleLengths is an iterator on the cycle lengths of a permutation
 struct CycleLengths{T}
   a::Perm{T}
@@ -790,7 +805,7 @@ true
 ```
 """
 function Perm_rowcol(m1::AbstractMatrix, m2::AbstractMatrix;debug=false)
-  if size(m1)!=size(m2) error("not same dimensions") end
+  if size(m1)!=size(m2) ArgumentError("not same dimensions") end
   if isempty(m1) return [Perm(), Perm()] end
   dist(m,n)=count(i->m[i]!=n[i],eachindex(m))
   dist(m,n,dim,l)=dim==1 ? dist(m[l,:],n[l,:]) : dist(m[:,l],n[:,l])
