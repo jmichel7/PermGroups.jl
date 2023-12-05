@@ -170,8 +170,9 @@ perm(p::Perm)=p.d
 AbstractPermutations.degree(p::Perm)=last_moved(p)
 AbstractPermutations.inttype(p::Perm)=eltype(p)
 
-# if uncomment next, AbstractPermutations tests pass
-#Perm{T}(v::AbstractVector{T},check=true) where T<:Integer=Perm(v;check)
+# next stupid method for AbstractPermutations tests to pass
+Perm{T}(v::AbstractVector{T};check) where T<:Integer=Perm(v;check)
+Perm{T}(v::AbstractVector{T},check) where T<:Integer=Perm(v;check)
 
 #---------------- Constructors ---------------------------------------
 function Perm(v::AbstractVector{<:Integer};check=true)
@@ -293,6 +294,7 @@ Base.one(p::Perm{T}) where T=Perm{T}(;degree=length(p.d))
 Base.one(::Type{Perm{T}}) where T=Perm_(T[])
 Base.isone(p::Perm)=@inbounds all(i->p.d[i]==i,eachindex(p.d))
 Base.copy(p::Perm)=Perm_(copy(p.d))
+Base.deepcopy(p::Perm)=copy(p)
 
 # Perms are scalars for broadcasting
 Base.broadcastable(p::Perm)=Ref(p)
@@ -587,10 +589,7 @@ function Base.show(io::IO, a::Perm{T})where T
   if !hasdecor print(io,"\"") end
 end
 
-function Base.show(io::IO, ::MIME"text/plain", a::Perm{T}) where T
-#  if T!=Idef print(io,typeof(a),": ") end
-  show(io,a)
-end
+Base.show(io::IO, ::MIME"text/plain", a::Perm{T}) where T=show(io,a)
   
 #--- CycleLengths is an iterator on the cycle lengths of a permutation
 struct CycleLengths{T}
