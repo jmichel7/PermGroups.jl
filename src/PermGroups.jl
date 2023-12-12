@@ -46,13 +46,13 @@ permutation  of the conjugacy classes effected by an automorphism. Finally,
 we   give  application  to  the  group   of  simultaneous  row  and  column
 permutations of a matrix: see `stab_onmats, Perm`.
 
-finally, benchmarks on julia 1.8
+finally, benchmarks on julia 1.9
 ```benchmark
 julia> @btime collect(symmetric_group(8));
-  2.673 ms (129965 allocations: 5.76 MiB)
+  1.921 ms (50128 allocations: 3.29 MiB)
 
 julia> @btime words(symmetric_group(8));
-  7.155 ms (86019 allocations: 11.00 MiB)
+  6.441 ms (80971 allocations: 10.88 MiB)
 
 julia> @btime elements(symmetric_group(8)); # Gap takes 8 ms
   1.565 ms (49539 allocations: 3.71 MiB)
@@ -553,7 +553,8 @@ function Base.iterate(I::ProdIterator)
   return n,state
 end
 
-function Base.iterate(I::ProdIterator,state)
+# inline is crucial to the performance (julia 1.9)
+@inline function Base.iterate(I::ProdIterator,state)
   for i in length(state):-1:1
     u=iterate(I.iterators[i],last(state[i]))
     if u===nothing continue end
@@ -581,7 +582,6 @@ end
 
 Base.length(G::PermGroup)=length(Int,G)
 
-# iterating I directly is 25% faster unfortunately
 function Base.iterate(G::PermGroup{T}) where T
   I=ProdIterator(map(x->values(x.δ),reverse(get_stabchain(G))))
   u=iterate(I)
@@ -590,7 +590,8 @@ function Base.iterate(G::PermGroup{T}) where T
   p,(I,st)
 end
 
-function Base.iterate(G::PermGroup,(I,state))
+# inline is crucial to the performance (julia 1.9)
+@inline function Base.iterate(G::PermGroup,(I,state))
   u=iterate(I,state)
   if u===nothing return u end
   p,st=u

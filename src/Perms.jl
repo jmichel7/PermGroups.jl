@@ -605,7 +605,7 @@ end
 Base.IteratorSize(x::CycleLengths)=Base.SizeUnknown()
 Base.eltype(x::CycleLengths)=Int
 
-function Base.iterate(c::CycleLengths,k=1)
+@inline function Base.iterate(c::CycleLengths,k=1)
   for i in k:length(c.to_visit)
 @inbounds if !c.to_visit[i] continue end
     l=1
