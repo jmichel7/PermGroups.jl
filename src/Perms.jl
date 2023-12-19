@@ -154,6 +154,11 @@ end
 
 Base.eltype(p::Perm{T}) where T=T
 
+# next 3 methods for AbstractPermutations tests to pass
+AbstractPermutations.degree(p::Perm)=last_moved(p)
+AbstractPermutations.inttype(p::Perm)=eltype(p)
+Perm{T}(v::AbstractVector{T};check) where T<:Integer=Perm(v;check)
+
 """
 `perm(p::Perm)` returns the data field of a `Perm`.
 ```julia-repl
@@ -167,16 +172,9 @@ julia> perm(Perm(2,3;degree=4))
 """
 perm(p::Perm)=p.d
 
-AbstractPermutations.degree(p::Perm)=last_moved(p)
-AbstractPermutations.inttype(p::Perm)=eltype(p)
-
-# next stupid method for AbstractPermutations tests to pass
-Perm{T}(v::AbstractVector{T};check) where T<:Integer=Perm(v;check)
-Perm{T}(v::AbstractVector{T},check) where T<:Integer=Perm(v;check)
-
 #---------------- Constructors ---------------------------------------
 function Perm(v::AbstractVector{<:Integer};check=true)
-  if check && !isperm(v) ArgumentError("not a permutation") end
+  if check && !isperm(v) throw(ArgumentError("not a permutation")) end
   Perm_(v)
 end
 
@@ -193,7 +191,7 @@ function Perm{T}(x::Vararg{<:Integer,N};degree=0)where {T<:Integer,N}
     d[x[i]]=x[i+1]
   end
   d[x[end]]=x[1]
-  if length(x)>2 && !isperm(d) ArgumentError("not a permutation") end
+  if length(x)>2 && !isperm(d) throw(ArgumentError("not a permutation")) end
   Perm_(d)
 end
 
@@ -232,7 +230,7 @@ macro perm_str(s::String)
   if match(r"^\s*\(\s*\)\s*$",s)!==nothing return res end
   while match(r"^\s*$"s,s)===nothing
     m=match(r"^\s*\((\s*\d+\s*,)+\s*\d+\)"s,s)
-    if m===nothing ArgumentError("malformed permutation: ",s) end
+    if m===nothing throw(ArgumentError("malformed permutation: ",s)) end
     s=s[m.match.ncodeunits+1:end]
     res*=Perm{T}(Meta.parse(replace(m.match,r"\s*"=>"")).args...)
   end
@@ -284,7 +282,7 @@ function Perm{T}(m::AbstractMatrix{<:Integer}) where T<:Integer
   l=map(x->findfirst(!iszero,x),eachrow(m))
   if size(m,1)!=size(m,2) || any(x->count(!iszero,x)!=1,eachrow(m)) || 
     !isperm(l) || !all(i->isone(m[i,l[i]]),axes(m,1))
-    ArgumentError("not a permutation matrix")
+    throw(ArgumentError("not a permutation matrix"))
   end
   Perm_(T.(l))
 end
@@ -804,7 +802,7 @@ true
 ```
 """
 function Perm_rowcol(m1::AbstractMatrix, m2::AbstractMatrix;debug=false)
-  if size(m1)!=size(m2) ArgumentError("not same dimensions") end
+  if size(m1)!=size(m2) throw(ArgumentError("not same dimensions")) end
   if isempty(m1) return [Perm(), Perm()] end
   dist(m,n)=count(i->m[i]!=n[i],eachindex(m))
   dist(m,n,dim,l)=dim==1 ? dist(m[l,:],n[l,:]) : dist(m[:,l],n[:,l])

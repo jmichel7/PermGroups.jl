@@ -1,7 +1,7 @@
 name = "PermGroups"
 uuid = "0b63354f-98d5-4b2f-8b91-7408084ca26b"
 authors = ["Jean Michel <jean.michel@imj-prg.fr>"]
-version = "0.2.14"
+version = "0.2.15"
 
 [deps]
 AbstractPermutations = "36d08e8a-54dd-435f-8c9e-38a475050b11"
@@ -10,7 +10,7 @@ OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [compat]
-AbstractPermutations = "0.2"
+AbstractPermutations = "0.2, 0.3"
 Combinat = "0.0.5, 0.0.6, 0.1"
 OrderedCollections = "1"
 Reexport = "1"
