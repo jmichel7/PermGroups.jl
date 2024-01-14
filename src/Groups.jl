@@ -770,6 +770,8 @@ end
 
 "`intersect(G::Group, H::Group)` the intersection as a group"
 function Base.intersect(G::Group, H::Group) # horrible implementation
+  if all(x->x in H,gens(G)) return G end
+  if all(x->x in G,gens(H)) return H end
   if min(length(G),length(H))>104000 error("too large intersect($G,$H)") end
   if length(G)<length(H) res=Group(filter(x->x in H,elements(G)))
   else res=Group(filter(x->x in G,elements(H)))
