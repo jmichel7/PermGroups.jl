@@ -226,7 +226,7 @@ julia> orbit([Perm(1,2),Perm(2,3)],[1,3],(v,g)->sort(v.^g)) # "OnSets"
  [1, 2]
 ```
 """
-function orbit(gens::AbstractVector,pnt,action::F=^) where F<:Function
+function orbit(gens::AbstractVector,pnt,action::Function=^)
   set=Set([pnt])
   orb=[pnt]
   for pnt in orb, gen in gens
@@ -239,7 +239,7 @@ function orbit(gens::AbstractVector,pnt,action::F=^) where F<:Function
   orb
 end
 
-orbit(G::Group,pnt,action::F=^) where F<:Function=orbit(gens(G),pnt,action)
+orbit(G::Group,pnt,action::Function=^)=orbit(gens(G),pnt,action)
 
 """
 `transversal(G::Group,p,action::Function=^)`
@@ -269,7 +269,7 @@ OrderedDict{Tuple{Int64, Int64}, Perm{Int16}} with 6 entries:
   (3, 2) => (1,3)
 ```
 """
-function transversal(G::Group,pnt,action::F=^) where F<:Function
+function transversal(G::Group,pnt,action::Function=^)
   trans=OrderedDict(pnt=>one(G))
   orb=[pnt]
   for pnt in orb, gen in gens(G)
@@ -282,7 +282,7 @@ function transversal(G::Group,pnt,action::F=^) where F<:Function
   trans
 end
 
-function extend_transversal!(trans,G::Group,action::F=^) where F<:Function
+function extend_transversal!(trans,G::Group,action::Function=^)
   orb=collect(keys(trans))
   for pnt in orb, gen in gens(G)
     img=action(pnt,gen)
@@ -310,7 +310,7 @@ OrderedDict{Int64, Vector{Int64}} with 3 entries:
   3 => [1, 2]
 ```
 """
-function words_transversal(gens,pnt,action::F=^) where F<:Function
+function words_transversal(gens,pnt,action::Function=^)
   trans=OrderedDict(pnt=>Int[])
   orb=[pnt]
   for pnt in orb, (i,gen) in enumerate(gens)
@@ -323,7 +323,7 @@ function words_transversal(gens,pnt,action::F=^) where F<:Function
   trans
 end
 
-function orbits(gens::AbstractVector,v::AbstractVector,action=^;trivial=true)
+function orbits(gens::AbstractVector,v::AbstractVector,action::Function=^;trivial=true)
   res=Vector{eltype(v)}[]
   while !isempty(v)
     o=orbit(gens,first(v),action)
@@ -351,7 +351,7 @@ julia> orbits(G,1:4)
  [4]
 ```
 """
-orbits(G::Group,v,action=^;trivial=true)=orbits(gens(G),v,action;trivial)
+orbits(G::Group,v,action::Function=^;trivial=true)=orbits(gens(G),v,action;trivial)
 
 """
 `centralizer(G::Group,p,action=^)`
@@ -364,9 +364,7 @@ julia> centralizer(G,1)
 Group((2,3))
 ```
 """
-function centralizer(G::Group,p,action::Function=^)
-  stabilizer(G,p,action)
-end
+centralizer(G::Group,p,action::Function=^)=stabilizer(G,p,action)
 
 """
 `centralizer(G::Group,H::Group)` the centralizer in `G` of the group `H`
@@ -396,7 +394,7 @@ julia> stabilizer(G,[1,2],onsets)
 Group((3,4),(1,2))
 ```
 """
-function stabilizer(G::Group,p,action=^)
+function stabilizer(G::Group,p,action::Function=^)
   t=transversal(G,p,action)
   if length(t)==1 return G end
   C=unique(wx*s/t[action(x,s)] for (x,wx) in t for s in gens(G))
@@ -720,7 +718,7 @@ julia> transporting_elt(g,[1,2,3,4],[2,3,4,5],(s,g)->sort(s.^g))
 julia> transporting_elt(g,[1,2,3,4],[3,4,5,2],(s,g)->s.^g)
 ```
 """
-function transporting_element(W::Group,x,y,action=^;dist=nothing,verbose=false)
+function transporting_element(W::Group,x,y,action::Function=^;dist=nothing,verbose=false)
   if isnothing(dist)
     if x==y return one(W) end
     t=transversal(W,x,action)

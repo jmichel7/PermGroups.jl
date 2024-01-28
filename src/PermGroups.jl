@@ -80,8 +80,11 @@ include("Groups.jl"); @reexport using .Groups
 using Combinat: tally, collectby
 export PermGroup, symmetric_group, reduced, stab_onmats, on_classes,
        get_stabchain, stabchain, Stabchain, Stablink
-#-------------------- now permutation groups -------------------------
+
+# PermGroups should have fields gens and one
 abstract type PermGroup{T}<:Group{Perm{T}} end
+
+Base.one(G::PermGroup)=G.one 
 
 PermGroup()=Group(Perm{Int16}[])
 
@@ -94,8 +97,6 @@ function Base.show(io::IO,G::PermGroup{T})where T
   print(io,")")
 end
 
-Base.one(G::PermGroup)=G.one # PermGroups should have fields gens and one
-
 "`last_moved(G::PermGroup)` the largest moved point by any `g∈ G`"
 function Perms.last_moved(G::PermGroup{T})where T
   get!(G,:last_moved)do
@@ -106,7 +107,7 @@ end
 " `orbits(G::PermGroup)` the orbits of `G` on its moved points."
 function Perms.orbits(G::PermGroup{T})where T
   get!(G,:orbits)do
-   orbits(G,T(1):last_moved(G);trivial=false)
+    orbits(G,T(1):last_moved(G);trivial=false)
   end::Vector{Vector{T}}
 end
 
@@ -463,7 +464,11 @@ end
 
 # only difference with general method is sorting
 function Groups.elements(C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
-  sort(orbit(C.G,C.representative))
+  get!(C,:elements)do
+    l=sort(orbit(C.G,C.representative))
+    if length(l)>10000 println("!! computed class of size ",length(l)) end
+    l
+  end::Vector{T}
 end
 
 " The cycle types of conjugacy class `C` on each orbit of `C.G`"
@@ -485,7 +490,8 @@ function positions_class(W::Union{Group{<:Perm},NormalCoset{<:Perm,<:Group}},w)
   if W isa NormalCoset Z=centralizer(center(Group(W)),W.phi)
   else Z=center(W) end
   for c in filter(!isone,elements(Z))
-    l=filter(i->cycletypes(W,cl[i].representative.*c)==cycletypes(W,w*c),l)
+    cc=cycletypes(W,w*c)
+    l=filter(i->cycletypes(W,cl[i].representative.*c)==cc,l)
     if length(l)==1 return l end
   end
   l
@@ -516,7 +522,7 @@ julia> on_classes(W,Perm(1,4,2,5,3,6))
 """
 on_classes(G, aut)=Perm(Perms.Idef.(map(c->position_class(G,c^aut),classreps(G))))
 
-function Base.in(C::ConjugacyClass{T,TW},w::T)where{T,TW<:PermGroup}
+function Base.in(w::T,C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
   r=searchsortedfirst(elements(C),w)
   r<=length(C) && elements(C)[r]==w
 end
@@ -598,7 +604,6 @@ end
   p,(I,st)
 end
 
-# elements is twice faster than collect(G), should not be
 function Groups.elements(G::PermGroup)
   get!(G,:elements)do
     t=reverse(sort.(collect.(values.(map(x->x.δ,get_stabchain(G))))))
