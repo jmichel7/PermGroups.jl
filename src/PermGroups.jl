@@ -104,6 +104,13 @@ function Perms.last_moved(G::PermGroup{T})where T
   end::T
 end
 
+"`first_moved(G::PermGroup)` the smallest moved point by any `g∈ G`"
+function Perms.first_moved(G::PermGroup{T})where T
+  get!(G,:first_moved)do
+    maximum(first_moved.(gens(G));init=T(1))
+  end::T
+end
+
 " `orbits(G::PermGroup)` the orbits of `G` on its moved points."
 function Perms.orbits(G::PermGroup{T})where T
   get!(G,:orbits)do
@@ -581,9 +588,9 @@ with  integers of type `type` (use `Int128` or `BigInt` for big permutation
 groups).
 """
 function Base.length(::Type{T},G::PermGroup)where T
-  T(get!(G,:length)do
-     prod(x->T(length(x.δ)),get_stabchain(G);init=1)
-  end)
+  get!(G,:length)do
+    prod(x->T(length(x.δ)),get_stabchain(G);init=1)
+  end::T
 end
 
 Base.length(G::PermGroup)=length(Int,G)
@@ -616,6 +623,7 @@ function Groups.elements(G::PermGroup)
    end::Vector{eltype(G)}
 end
 
+Base.rand(G::PermGroup)=prod(rand.(map(x->collect(values(x.δ)),reverse(get_stabchain(G)))))
 #------------------------- cosets for PermGroups -----------------------
 
 # computes "canonical" element of W.phi
