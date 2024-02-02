@@ -78,19 +78,20 @@ include("Perms.jl"); @reexport using .Perms
 include("Groups.jl"); @reexport using .Groups
 @reexport using OrderedCollections: OrderedDict
 using Combinat: tally, collectby
+using Primes: divisors
 export PermGroup, symmetric_group, reduced, stab_onmats, on_classes,
        get_stabchain, stabchain, Stabchain, Stablink
 
 # PermGroups should have fields gens and one
 abstract type PermGroup{T}<:Group{Perm{T}} end
 
-Base.one(G::PermGroup)=G.one 
+Base.one(G::PermGroup)=G.one
 
 PermGroup()=Group(Perm{Int16}[])
 
 function Base.show(io::IO,G::PermGroup{T})where T
   print(io,"Group(")
-  t=isempty(gens(G)) || T!=Perms.Idef 
+  t=isempty(gens(G)) || T!=Perms.Idef
   if t print(io,"Perm{",T,"}[") end
   join(io,gens(G),",")
   if t print(io,"]") end
@@ -107,7 +108,7 @@ end
 "`first_moved(G::PermGroup)` the smallest moved point by any `g∈ G`"
 function Perms.first_moved(G::PermGroup{T})where T
   get!(G,:first_moved)do
-    maximum(first_moved.(gens(G));init=T(1))
+    minimum(first_moved.(gens(G));init=T(1))
   end::T
 end
 
@@ -204,7 +205,7 @@ struct Stablink{T,TG<:PermGroup{T},TT}
 end
 
 """
-A  `Stabchain` is  a  `Vector{Stablink}` `S=[S₁,…,Sₖ]` associated to a
+A  `Stabchain`  is  a  `Vector{Stablink}`  `S=[S₁,…,Sₖ]`  associated  to  a
 `PermGroup{T}`  `G`. The `Vector{T}` given by `B=[S₁.b,…,Sₖ.b]` is called a
 `base`   for  `G`.   At  each   stage  one   has  `Sᵢ.c=C_G(B[1:i-1])`  and
 `Sᵢ.δ=transversal(Sᵢ.c,Sᵢ.b)`
@@ -239,7 +240,7 @@ end
 """
 `strip(g::Perm,S::Stabchain)`
 
-returns g "stripped" of its components in all `S.c`, that is a pair 
+returns g "stripped" of its components in all `S.c`, that is a pair
 (an element which fixes S[1:i-1].b and sends S.b[i] outside S.δ[i],i+1)
 """
 function strip(g::Perm,S::Stabchain)
@@ -260,12 +261,13 @@ Eick,  O'Brien, section 4.4.2.
 """
 function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
   B=T.(B) # check type and make copy to be able to extend it
-  for x in gens(G) 
+  for x in gens(G)
     if all(b->b^x==b,B) push!(B,first_moved(x)) end
   end
   S=Stablink{T,PG{T},trans==transversal ? OrderedDict{T,Perm{T}} : trans{T,Perm{T}}}[]
   for i in eachindex(B)
     C=Group(filter(g->all(b->b^g==b,B[1:i-1]),gens(G)))
+    if istrivial(C) break end
     t=trans(C,B[i])
     push!(S,Stablink(B[i],C,t))
   end
@@ -337,7 +339,7 @@ See [Holt] page 114.
 """
 # test(g,l) should work by consulting base(S)[1:l]
 function search(S::Stabchain{T},test,property;all=true)where T
-  if isempty(S) 
+  if isempty(S)
     g=one(Perm{T})
     if property(g) return all ? [g] : g end
     return nothing
@@ -364,12 +366,12 @@ function search(S::Stabchain{T},test,property;all=true)where T
       gl=u[l]*gl
     end
 #   @show gl,c
-    if l==k && test(gl,k) && property(gl) 
+    if l==k && test(gl,k) && property(gl)
       if !all return gl
       else push!(res,gl)
       end
     end
-    while l>0 && c[l]==length(S[l].δ) 
+    while l>0 && c[l]==length(S[l].δ)
       l-=1
     end
     if l==0 return all ? res : nothing end
@@ -421,7 +423,7 @@ function Groups.stabilizer(W::PermGroup,g::Perm)
       push!(nb,d[b[j]][2])
       push!(nhb,d[b[j]^h][2])
       if length(nb)!=length(nhb) return false end
-      if d[b[j]][2]==d[b[l]][2] && 
+      if d[b[j]][2]==d[b[l]][2] &&
        ((d[b[j]][3]-d[b[l]][3])-(d[b[j]^h][3]-d[b[l]^h][3]))%d[b[j]][1]!=0
         return false
       end
@@ -460,14 +462,104 @@ function Groups.transporting_elt(W::PermGroup,b::AbstractVector{<:Integer},b1::A
   search(S,test,property;all=false)
 end
 
-#function Groups.transporting_elt(W::PermGroup,g::Perm,g1::Perm)
-#  if debug[] println("using transp(PG,perm,perm)") end
-#  S=get_stabchain(W)
-#  b=base(S)
-#  test(h,l)=all(i->b[i]^(inv(h)*g)==b[i]^(g1*inv(h)),1:min(l,length(b)))
-#  property(h)=g^h==g1
-#  search(S,test,property;all=false)
-#end
+rio(io::IO=stdout;p...)=IOContext(io,:limit=>true,p...)
+
+function Groups.transporting_elt(G::PermGroup{T},g::Perm,h::Perm;K=nothing)where T
+
+  #find s'∈S*s forggsome stabilizer S in a stabchain of G such that g^s'==h
+  function recur(S,s,L)
+
+    # let p=S.orbit[1] be  the  basepoint  of  this  stabilizer S.
+    trans=get_stabchain(S)[1].δ
+    orb=collect(keys(trans))
+    p=first(orb)
+
+    # if i = img[p] is an integer it is an earlier  basepoint  that  is
+    # mapped to p by g.  For it we have already fixed an image i^s;
+    # so we have p^x=(i^g)^x=i^(g*x)=i^(x*h)=(i^x)^h=(i^s)^h.
+    if img[p] isa Integer
+      pnts=[(img[p]^s)^h]
+      if !(preimage(pnts[1],s) in orb) return end
+    # otherwise it is a list of possible  images  of  $p$,  i.e.,  points
+    # that lie in orbits under $h$ of the same length as $p$  under  $g$.
+    else pnts=intersect(ontuples(orb,s),img[p]::Vector{T})
+    end
+
+    # run through the cosets of  the  stabilizer  in  the  standard  way.
+    while !isempty(pnts)
+      p=first(pnts)
+      ss=trans[preimage(p,s)]*s
+      if length(S.stabchain)==1
+        if  g^ss==h return ss end
+      else
+        elm=recur(get_stabchain(S)[2].c,ss,filter(l->p^l==p,L))
+        if !isnothing(elm) return elm end
+      end
+      pnts=setdiff(pnts, orbit(L,p))
+    end
+    # there is no  element  with  the  property  in  the  coset  S.s
+  end
+
+  # handle trivial cases.
+  if g==h  return one(G) end
+  if g==one(G) || h==one(G) return end
+
+  # compute the cyclestructures and compare them.
+  if cycletype(g)!=cycletype(h) return end
+
+  orbsh=orbits(h, first_moved(G):last_moved(G))
+
+  # compute a stabchain for $G$ with a base that has as often as
+  # possible βᵢᵍ= βᵢ₊₁.
+  orbsg=orbits(g, first_moved(G):last_moved(G))
+  sort!(orbsg,by=x->-length(x))
+  G.stabchain=stabchain(G,vcat(orbsg...))
+  bb=PermGroups.base(get_stabchain(G))
+  st=get_stabchain(G)
+  for i in 2:length(st) st[i].c.stabchain=st[i:end] end
+#  @show bb
+
+  # for each length make a set of points in orbits of that length under $h$
+  lensh=Dict{T,Vector{T}}()
+  for orb in orbsh
+    if !haskey(lensh,length(orb)) lensh[length(orb)]=sort(orb)
+    else lensh[length(orb)]=sort(vcat(lensh[length(orb)],orb))
+    end
+  end
+
+  # for each basepoint
+  img=Dict{T,Any}()
+  for (i,bpt)  in enumerate(bb)
+    # if this basepoint is the image of an earlier  basepoint  store  it,
+    p=preimage(bpt,g)
+    if p in bb[1:i-1] img[bpt]=p
+    # otherwise store the points in orbits under $h$ of the same  length.
+    else
+      img[bpt]=lensh[length(orbit(g,bpt))]
+    end
+  end
+# @show img
+#  @show g,h
+
+  # find a subgroup  $K$  of  $G$ which preserves the conjugation property,
+  # i.e., g^x=h implies g^{x*k}=h for all x∈G,  k∈K.
+  # any subgroup of Centralizer(G,h) will do,  for example Group(h),
+  # we add powers of h so that we know generators for stabilizers of K.
+  if isnothing(K)
+    gg=empty(gens(G))
+    for gen in pushfirst!(union(map(x->gens(x.c),get_stabchain(G))...),h)
+      if h^gen==h  && gen in G
+        for len  in  divisors(order(gen))
+          if !isone(gen^len) && !(gen^len in gg) push!(gg,gen^len) end
+        end
+      end
+    end
+    gg=unique(append!(gg,gens(center(G))))
+  end
+
+  # search through the whole group $G = G*Id$  for a  conjugating  element.
+  recur(G,one(G),gg)
+end
 
 # only difference with general method is sorting
 function Groups.elements(C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
@@ -530,8 +622,9 @@ julia> on_classes(W,Perm(1,4,2,5,3,6))
 on_classes(G, aut)=Perm(Perms.Idef.(map(c->position_class(G,c^aut),classreps(G))))
 
 function Base.in(w::T,C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
-  r=searchsortedfirst(elements(C),w)
-  r<=length(C) && elements(C)[r]==w
+  if length(C)<20 !isempty(searchsortedfirst(elements(C),w))
+  else !isnothing(transporting_element(C.G,C.representative,w))
+  end
 end
 
 #-------------- iteration on product of lists of group elements ---------------

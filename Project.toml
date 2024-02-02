@@ -7,12 +7,14 @@ version = "0.2.15"
 AbstractPermutations = "36d08e8a-54dd-435f-8c9e-38a475050b11"
 Combinat = "a6b051d1-fc4b-4ede-b53e-347fa9fb9a74"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+Primes = "27ebfcd6-29c5-5fa9-bf4b-fb8fc14df3ae"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [compat]
 AbstractPermutations = "0.2, 0.3"
 Combinat = "0.0.5, 0.0.6, 0.1"
 OrderedCollections = "1"
+Primes = "0.5.4, 0.6"
 Reexport = "1"
 julia = "1"
 
