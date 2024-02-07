@@ -386,11 +386,18 @@ function Base.inv(a::Perm)
   Perm_(r)
 end
 
-"`preimage(i::Integer,p::Perm)` the preimage of `i` by `p` (same as image of `i` by `inv(p)` but does not need computing the inverse)."
-function preimage(i::T,p::Perm)where T<:Integer
+function Base.:/(i::T,p::Perm)where T<:Integer
   p=findfirst(==(i),p.d)
   isnothing(p) ? i : T(p)
 end
+
+"""
+`preimage(i::Integer,p::Perm)` or `i/p`
+
+the  preimage of `i` by `p` (same as  image of `i` by `inv(p)` but does not
+need computing the inverse)."
+"""
+preimage(i::T,p::Perm) where T<:Integer=i/p
 
 # less allocations than inv(a)*b
 function Base.:\(a::Perm, b::Perm)

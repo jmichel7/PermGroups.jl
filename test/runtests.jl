@@ -6,15 +6,15 @@ function mytest(file::String,cmd::String,man::String)
   if endswith(cmd,";") exec="nothing" 
   else exec=replace(exec,r"\s*$"m=>"")
        exec=replace(exec,r"\s*$"s=>"")
+       exec=replace(exec,r"^\s*"=>"")
   end
-  if exec!=man 
-    i=1
-    while i<=lastindex(exec) && i<=lastindex(man) && exec[i]==man[i]
-      i=nextind(exec,i)
-    end
-    print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
+  if exec==man return true end
+  i=1
+  while i<=lastindex(exec) && i<=lastindex(man) && exec[i]==man[i]
+    i=nextind(exec,i)
   end
-  exec==man
+  print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
+  return false
 end
 @testset verbose = true "PermGroups" begin
 @testset "Groups.jl" begin
