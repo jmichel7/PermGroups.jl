@@ -119,7 +119,7 @@ function Perms.orbits(G::PermGroup{T})where T
   end::Vector{Vector{T}}
 end
 
-struct SchreierTransversal{T<:Signed,TP<:Perm{T}}
+struct SchreierTransversal{T<:Signed,TP<:Perm}
   v::Vector{T}
   gg::Vector{TP}
 end
@@ -131,25 +131,27 @@ in the orbit of p.
 """
 function SchreierTransversal(G::PermGroup{T},p::Integer)where T
 # T should be a signed type
-  res=zeros(T,max(last_moved(G),p))
+  res=zeros(typeof(p),max(last_moved(G),p))
   res[p]=-1
   new=[p]
-  while true
-    n=copy(new)
-    empty!(new)
-    for p in n, i in eachindex(gens(G))
-      q=p^gens(G)[i]
+  ptr=1
+  while ptr<=length(new)
+    p=new[ptr]
+    ptr+=1
+    for (i,g) in enumerate(gens(G))
+      q=p^g
       if res[q]==0
         res[q]=i
         push!(new,q)
       end
     end
-    if isempty(new) break end
   end
   SchreierTransversal(res,gens(G))
 end
 
 Base.haskey(t::SchreierTransversal,k::Integer)=k<=length(t.v) && !iszero(t.v[k])
+
+Base.keys(t::SchreierTransversal)=filter(k->!iszero(t.v[k]),eachindex(t.v))
 
 function Base.getindex(t::SchreierTransversal,k::Integer)
   p=t.v[k]
@@ -170,17 +172,17 @@ end
 function Groups.extend_transversal!(t::SchreierTransversal,G::PermGroup)
   new=filter(i->!iszero(t.v[i]),eachindex(t.v))
   append!(t.gg,setdiff(gens(G),t.gg))
-  while true
-    n=copy(new)
-    empty!(new)
-    for p in n, i in eachindex(t.gg)
-      q=p^t.gg[i]
-      if t[q]==0
-        t[q]=i
+  ptr=1
+  while ptr<=length(new)
+    p=new[ptr]
+    ptr+=1
+    for (i,g) in enumerate(t.gg)
+      q=p^g
+      if t.v[q]==0
+        t.v[q]=i
         push!(new,q)
       end
     end
-    if isempty(new) break end
   end
   t
 end
@@ -199,9 +201,9 @@ function Base.iterate(t::SchreierTransversal,i)
 end
 
 struct Stablink{T,TG<:PermGroup{T},TT}
-  b::T
-  c::TG
-  δ::TT
+  b::T # basepoint
+  c::TG # centralizer(b)
+  δ::TT # transversal of b: first(first(δ))==b
 end
 
 """
@@ -254,10 +256,12 @@ function strip(g::Perm,S::Stabchain)
 end
 
 """
-Constructs a `Stabchain` for `G`
+Constructs a `Stabchain` for `G` [starting with base B]
 
 The  code refers  to the  Handbook of  computational group theory, by Holt,
 Eick,  O'Brien, section 4.4.2.
+
+trans could be SchreierTransversal
 """
 function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
   B=T.(B) # check type and make copy to be able to extend it
@@ -273,8 +277,8 @@ function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
   end
   i=length(S)
   while i>=1
-    for (β,wβ) in S[i].δ, x in gens(S[i].c)
-      h=wβ*x/S[i].δ[β^x] # possibly new elt of C_G(B[1:i])
+    for (β,wᵦ) in S[i].δ, x in gens(S[i].c)
+      h=wᵦ*x/S[i].δ[β^x] # possibly new Schreier generator of C_G(B[1:i])
       if isone(h) continue end
       h,j=strip(h,S)
       if isone(h) continue end
@@ -316,7 +320,7 @@ function get_stabchain(G::PermGroup{T})where T
 end
 
 function Base.in(g::Perm,G::PermGroup)
-  g,i=strip(g,get_stabchain(G))
+  g,_=strip(g,get_stabchain(G))
   isone(g)
 end
 
@@ -466,7 +470,7 @@ rio(io::IO=stdout;p...)=IOContext(io,:limit=>true,p...)
 
 function Groups.transporting_elt(G::PermGroup{T},g::Perm,h::Perm;K=nothing)where T
 
-  #find s'∈S*s forggsome stabilizer S in a stabchain of G such that g^s'==h
+  #find s'∈S*s for some stabilizer S in a stabchain of G such that g^s'==h
   function recur(S,s,L)
 
     # let p=S.orbit[1] be  the  basepoint  of  this  stabilizer S.
