@@ -250,7 +250,7 @@ function strip(g::Perm,S::Stabchain)
   for (i,S) in enumerate(S)
     β=S.b^g
     if !haskey(S.δ,β) return g,i end
-    Perms.mul!(g,inv(S.δ[β]))
+    if !istrivial(S.c) Perms.mul!(g,inv(S.δ[β])) end
   end
   g,length(S)+1
 end
@@ -271,7 +271,7 @@ function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
   S=Stablink{T,PG{T},trans==transversal ? OrderedDict{T,Perm{T}} : trans{T,Perm{T}}}[]
   for i in eachindex(B)
     C=Group(filter(g->all(b->b^g==b,B[1:i-1]),gens(G)))
-    if istrivial(C) break end
+#   if istrivial(C) break end
     t=trans(C,B[i])
     push!(S,Stablink(B[i],C,t))
   end
