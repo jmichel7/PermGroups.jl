@@ -249,8 +249,9 @@ function strip(g::Perm,S::Stabchain)
   g=copy(g)
   for (i,S) in enumerate(S)
     β=S.b^g
+    if β==S.b continue end
     if !haskey(S.δ,β) return g,i end
-    if !istrivial(S.c) Perms.mul!(g,inv(S.δ[β])) end
+    Perms.mul!(g,inv(S.δ[β]))
   end
   g,length(S)+1
 end
