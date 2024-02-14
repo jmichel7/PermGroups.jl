@@ -627,7 +627,7 @@ julia> on_classes(W,Perm(1,4,2,5,3,6))
 on_classes(G, aut)=Perm(Perms.Idef.(map(c->position_class(G,c^aut),classreps(G))))
 
 function Base.in(w::T,C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
-  if length(C)<20 !isempty(searchsortedfirst(elements(C),w))
+  if length(C)<20 !isempty(searchsorted(elements(C),w))
   else !isnothing(transporting_element(C.G,C.representative,w))
   end
 end

@@ -598,7 +598,7 @@ function conjugacy_classes(G::Group{T})where T
     if haskey(G,:classreps)
       [ConjugacyClass(G,x,Dict{Symbol,Any}()) for x in G.classreps]
     else
-      if length(G)>10000 error("length(G)=",length(G),": should call Gap4") end
+      if length(G)>10000 error("length(G)=",length(G),": too big for ",typeof(G)) end
       res=orbits(G,elements(G))
       # assumes l sortable
       map(l->ConjugacyClass(G,minimum(l),Dict{Symbol,Any}(:elements=>sort(l))),res)
