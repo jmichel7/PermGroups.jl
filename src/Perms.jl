@@ -184,7 +184,7 @@ end
 returns  a cycle.  For example  `Perm{Int8}(1,2,3)` constructs the cycle
 `(1,2,3)` as a `Perm{Int8}`. If omitted `{T}` is taken to be `{$Idef}`.
 """
-function Perm{T}(x::Vararg{<:Integer,N};degree=0)where {T<:Integer,N}
+function Perm{T}(x::Vararg{T1,N};degree=0)where {T<:Integer,T1<:Integer,N}
   if isempty(x) return Perm_(T(1):T(degree)) end
   d=T.(1:max(degree,maximum(x)))
   for i in 1:length(x)-1
