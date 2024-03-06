@@ -701,7 +701,7 @@ julia> restricted(Perm(1,2)*Perm(3,4),3:4)
 ```
 """
 function restricted(a::Perm{T},l::AbstractVector{<:Integer})where T
-  v=collect(T(1):T(maximum(l)))
+  v=collect(T(1):T(maximum(l;init=0)))
   for i in l v[i]=i^a end
   Perm_(v)
 end
