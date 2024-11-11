@@ -276,9 +276,9 @@ julia> Perm([0 1 0;0 0 1;1 0 0])
 (1,2,3)
 ```
 """
-Perm(m::AbstractMatrix{<:Integer})=Perm{Idef}(m)
+Perm(m::AbstractMatrix)=Perm{Idef}(m)
 
-function Perm{T}(m::AbstractMatrix{<:Integer}) where T<:Integer
+function Perm{T}(m::AbstractMatrix) where T<:Integer
   l=map(x->findfirst(!iszero,x),eachrow(m))
   if size(m,1)!=size(m,2) || any(x->count(!iszero,x)!=1,eachrow(m)) || 
     !isperm(l) || !all(i->isone(m[i,l[i]]),axes(m,1))
