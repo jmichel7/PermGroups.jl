@@ -930,7 +930,7 @@ Base.one(C::NormalCoset)=NormalCoset(Group(C))
 # assume H is normal and there is a function NormalCoset
 Base.:/(W::Group,H::Group)=Group(unique(map(x->NormalCoset(H,x),gens(W))),NormalCoset(H))
 
-function classreps(G::NormalCoset{Group{T}}) where T
+function classreps(G::NormalCoset{T,TW}) where{T,TW}
   get!(G,:classreps) do
     getproperty.(conjugacy_classes(G),:representative)
   end::Vector{T}
@@ -951,6 +951,7 @@ function conjugacy_classes(G::NormalCoset)
     else res=orbits(Group(G),elements(G))
       res=map(l->ConjugacyClass(G,minimum(l),Dict{Symbol,Any}(:elements=>sort(l))),res)
       G.classreps=getproperty.(res,:representative)
+      res
     end
   end
 end
