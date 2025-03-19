@@ -585,6 +585,8 @@ order(::Type{T},G::Group) where T<:Integer=length(T,G)
   representative::T
 end
 
+Base.eltype(C::ConjugacyClass{T,TW}) where {T,TW}=T
+
 function Base.show(io::IO,C::ConjugacyClass)
   print(io,"ConjugacyClass(",C.G,",",C.representative,")")
 end
@@ -606,10 +608,10 @@ function conjugacy_classes(G::Group{T})where T
   end
 end
 
-function elements(C::ConjugacyClass{T}) where T
+function elements(C::ConjugacyClass)
   get!(C,:elements)do
     orbit(C.G,C.representative)
-  end::Vector{T}
+  end::Vector{eltype(C)}
 end
 
 Base.length(C::ConjugacyClass)=length(elements(C))
@@ -874,6 +876,8 @@ abstract type Coset{T,TW<:Group{<:T}} end
 
 Base.isone(a::Coset)=a.phi in Group(a)
 
+Base.eltype(G::Coset{T,TW}) where {T,TW}=T
+
 Group(W::Coset)=W.G
 
 # my cosets are right cosets
@@ -930,10 +934,10 @@ Base.one(C::NormalCoset)=NormalCoset(Group(C))
 # assume H is normal and there is a function NormalCoset
 Base.:/(W::Group,H::Group)=Group(unique(map(x->NormalCoset(H,x),gens(W))),NormalCoset(H))
 
-function classreps(G::NormalCoset{T,TW}) where{T,TW}
+function classreps(G::NormalCoset)
   get!(G,:classreps) do
     getproperty.(conjugacy_classes(G),:representative)
-  end::Vector{T}
+   end::Vector{eltype(G)}
 end
 
 nconjugacy_classes(G::NormalCoset)=length(classreps(G))
