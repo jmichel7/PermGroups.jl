@@ -51,7 +51,7 @@ finally, benchmarks on julia 1.9
 julia> @btime collect(symmetric_group(8));
   1.921 ms (50128 allocations: 3.29 MiB)
 
-julia> @btime words(symmetric_group(8));
+julia> @btime some_words(symmetric_group(8));
   6.441 ms (80971 allocations: 10.88 MiB)
 
 julia> @btime elements(symmetric_group(8)); # Gap takes 8 ms

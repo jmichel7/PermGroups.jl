@@ -38,7 +38,7 @@ more efficient methods.
 
 for  further information on  the functions defined  in this module, look at
 the  docstrings of `Group,  gens, ngens, comm,  orbit, orbits, transversal,
-words_transversal,  centralizer,  stabilizer,  center,  normalizer,  words,
+words_transversal,  centralizer,  stabilizer,  center,  normalizer,  some_words,
 minimal_words,   word,  in,   elements,  length,   order,  conjugacy_class,
 conjugacy_classes, classreps, nconjugacy_classes, fusion_conjugacy_classes,
 position_class,  isabelian,  iscyclic,  istrivial,  rand, transporting_elt,
@@ -55,7 +55,7 @@ export Group, centralizer, center, order,
   transporting_elt, transporting_element,
   fusion_conjugacy_classes,
   conjugacy_class, conjugacy_classes, Coset, NormalCoset,
-  Hom, isabelian, iscyclic, istrivial, words, minimal_words,
+  Hom, isabelian, iscyclic, istrivial, some_words, minimal_words, words,
   normalizer, orbit, orbits,
   position_class, stabilizer,
   transversal, words_transversal, word, elements, kernel, ConjugacyClass,
@@ -477,7 +477,7 @@ function minimal_words(G::Group,w)
 end
 
 """
-`words(G::Group)`
+`some_words(G::Group)`
 
 returns  a `Dict`  giving for  each element  of `G`  a positive word in the
 generators representing it. It is faster than `minimal_words` but the words
@@ -485,7 +485,7 @@ are not guaranteed minimal.
 
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(1,2,3));
-julia> words(G)
+julia> some_words(G)
 OrderedDict{Perm{Int16}, Vector{Int64}} with 6 entries:
   ()      => []
   (1,2)   => [1]
@@ -495,8 +495,8 @@ OrderedDict{Perm{Int16}, Vector{Int64}} with 6 entries:
   (1,3,2) => [1, 2, 1]
 ```
 """
-function words(G::Group{T})where T
-  get!(G,:words)do
+function some_words(G::Group{T})where T
+  get!(G,:some_words)do
     words=OrderedDict(one(G)=>Int[])
     for i in eachindex(gens(G))
       nwords=copy(words)
@@ -518,8 +518,39 @@ function words(G::Group{T})where T
   end::OrderedDict{T,Vector{Int}}
 end
 
+"""
+`words(G::Group;minimal=false)`
+
+returns  a  for  each  element  of  `G`  a  positive word in the generators
+representing  it. These words are not guaranteed minimal unless the keyword
+`minimal=true` is given (which makes the function somewhat slower).
+
+```julia-repl
+julia> G=Group(Perm(1,2),Perm(1,2,3));
+
+julia> words(G)
+6-element Vector{Vector{Int64}}:
+ []
+ [1]
+ [2]
+ [1, 2]
+ [2, 1]
+ [1, 2, 1]
+
+julia> words(G;minimal=true)
+6-element Vector{Vector{Int64}}:
+ []
+ [1]
+ [2]
+ [1, 2]
+ [2, 1]
+ [2, 2]
+```
+"""
+words(G::Group;minimal=false)=collect(values(minimal ? minimal_words(G) : some_words(G)))
+
 # returns Dict: (word w, n0 generator such that l(w/G(n0))<l(w)
-# faster than words but longer to retrieve word
+# faster than some_words but longer to retrieve word
 function words2(G::Group{T})where T
   get!(G,:words2)do
     words=OrderedDict(one(G)=>0)
