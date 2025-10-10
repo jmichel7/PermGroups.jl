@@ -3,18 +3,14 @@ using Test, PermGroups
 function mytest(file::String,cmd::String,man::String)
   println(file," ",cmd)
   exec=repr(MIME("text/plain"),eval(Meta.parse(cmd)),context=:limit=>true)
-  if endswith(cmd,";") exec="nothing" 
-  else exec=replace(exec,r"\s*$"m=>"")
-       exec=replace(exec,r"\s*$"s=>"")
-       exec=replace(exec,r"^\s*"=>"")
-  end
+  if endswith(cmd,";") return true end
+  exec=replace(exec,r"\s*$"m=>""); exec=replace(exec,r"\s*$"s=>"")
+  exec=replace(exec,r"^\s*"=>"")
   if exec==man return true end
-  i=1
-  while i<=lastindex(exec) && i<=lastindex(man) && exec[i]==man[i]
-    i=nextind(exec,i)
-  end
+  inds=collect(eachindex(exec))
+  i=inds[findfirst(i->i<=lastindex(man) && exec[i]!=man[i],inds)]
   print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
-  return false
+  false
 end
 @testset verbose = true "PermGroups" begin
 @testset "Groups.jl" begin
@@ -46,7 +42,10 @@ end
 @test mytest("Groups.jl","G=Group(Perm(1,2),Perm(2,3));","nothing")
 @test mytest("Groups.jl","minimal_words(G,Perm(1,3))","2-element Vector{Vector{Int64}}:\n [1, 2, 1]\n [2, 1, 2]")
 @test mytest("Groups.jl","G=Group(Perm(1,2),Perm(1,2,3));","nothing")
-@test mytest("Groups.jl","words(G)","OrderedDict{Perm{Int16}, Vector{Int64}} with 6 entries:\n  ()      => []\n  (1,2)   => [1]\n  (1,2,3) => [2]\n  (1,3)   => [1, 2]\n  (2,3)   => [2, 1]\n  (1,3,2) => [1, 2, 1]")
+@test mytest("Groups.jl","some_words(G)","OrderedDict{Perm{Int16}, Vector{Int64}} with 6 entries:\n  ()      => []\n  (1,2)   => [1]\n  (1,2,3) => [2]\n  (1,3)   => [1, 2]\n  (2,3)   => [2, 1]\n  (1,3,2) => [1, 2, 1]")
+@test mytest("Groups.jl","G=Group(Perm(1,2),Perm(1,2,3));","nothing")
+@test mytest("Groups.jl","words(G)","6-element Vector{Vector{Int64}}:\n []\n [1]\n [2]\n [1, 2]\n [2, 1]\n [1, 2, 1]")
+@test mytest("Groups.jl","words(G;minimal=true)","6-element Vector{Vector{Int64}}:\n []\n [1]\n [2]\n [1, 2]\n [2, 1]\n [2, 2]")
 @test mytest("Groups.jl","g=Group(perm\"(1,2,3)(6,7)\",perm\"(3,4,5)(7,8)\")","Group((1,2,3)(6,7),(3,4,5)(7,8))")
 @test mytest("Groups.jl","transporting_elt(g,1,5)","(1,5,4,3,2)")
 @test mytest("Groups.jl","transporting_elt(g,1,6)","nothing")
@@ -108,7 +107,7 @@ end
 @test mytest("Perms.jl","invpermute(m,p;dims=2)","3×3 Matrix{Int64}:\n 7  1  4\n 8  2  5\n 9  3  6")
 @test mytest("Perms.jl","invpermute(m,p;dims=(1,2))","3×3 Matrix{Int64}:\n 9  3  6\n 7  1  4\n 8  2  5")
 @test mytest("Perms.jl","orbits(Perm(1,2)*Perm(4,5),1:5)","3-element Vector{Vector{Int64}}:\n [1, 2]\n [3]\n [4, 5]")
-@test mytest("Perms.jl","cycles(Perm(1,2)*Perm(4,5))","2-element Vector{Vector{Int16}}:\n [1, 2]\n [4, 5]")
+@test mytest("Perms.jl","cycles(Perm(1,2)*Perm(4,5))","2-element Vector{Vector{\$Idef}}:\n [1, 2]\n [4, 5]")
 @test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5))","2-element Vector{Int64}:\n 2\n 2")
 @test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5),1:5)","3-element Vector{Int64}:\n 2\n 2\n 1")
 @test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5),1:6)","4-element Vector{Int64}:\n 2\n 2\n 1\n 1")

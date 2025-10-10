@@ -8,7 +8,7 @@ could be independent packages of their own.
 ```@docs
 Perms
 Perm
-Perm(::Integer...)
+Perm{T}(x::Vararg{T1,N};degree=0)where {T<:Integer,T1<:Integer,N}
 Perm(::AbstractMatrix{<:Integer})
 Perm(::AbstractVector, ::AbstractVector)
 Perm(::AbstractMatrix, ::AbstractMatrix)
