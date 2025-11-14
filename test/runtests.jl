@@ -107,7 +107,7 @@ end
 @test mytest("Perms.jl","invpermute(m,p;dims=2)","3×3 Matrix{Int64}:\n 7  1  4\n 8  2  5\n 9  3  6")
 @test mytest("Perms.jl","invpermute(m,p;dims=(1,2))","3×3 Matrix{Int64}:\n 9  3  6\n 7  1  4\n 8  2  5")
 @test mytest("Perms.jl","orbits(Perm(1,2)*Perm(4,5),1:5)","3-element Vector{Vector{Int64}}:\n [1, 2]\n [3]\n [4, 5]")
-@test mytest("Perms.jl","cycles(Perm(1,2)*Perm(4,5))","2-element Vector{Vector{\$Idef}}:\n [1, 2]\n [4, 5]")
+@test mytest("Perms.jl","cycles(Perm(1,2)*Perm(4,5))","2-element Vector{Vector{Int16}}:\n [1, 2]\n [4, 5]")
 @test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5))","2-element Vector{Int64}:\n 2\n 2")
 @test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5),1:5)","3-element Vector{Int64}:\n 2\n 2\n 1")
 @test mytest("Perms.jl","cycletype(Perm(1,2)*Perm(4,5),1:6)","4-element Vector{Int64}:\n 2\n 2\n 1\n 1")
