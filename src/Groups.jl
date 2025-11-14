@@ -4,7 +4,7 @@ This module gives some basic functionality on groups.
 `Group`  is  an  abstract  type,  but  the  following is assumed of a group
 `G` of one of its concrete implementations:
 
-  - The function `gens(G)` returns the list of generators of `G`.
+  - The function [`generators`](@ref)`(G)` returns the list of generators of `G` (this can also be abbreviated `gens(G)`).
   - The function `one(G)` returns the identity element of `G`.
 
 # Examples
@@ -17,7 +17,7 @@ julia> gens(G)
  (1,2)
  (1,2,3)
 
-julia> ngens(G)
+julia> ngens(G) # same as number_of_generators
 2
 
 julia> minimal_words(G)
@@ -37,12 +37,17 @@ the general methods in this module. The examples above use
 more efficient methods.
 
 for  further information on  the functions defined  in this module, look at
-the  docstrings of `Group,  gens, ngens, comm,  orbit, orbits, transversal,
-words_transversal,  centralizer,  stabilizer,  center,  normalizer,  some_words,
-minimal_words,   word,  in,   elements,  length,   order,  conjugacy_class,
-conjugacy_classes, classreps, nconjugacy_classes, fusion_conjugacy_classes,
-position_class,  isabelian,  iscyclic,  istrivial,  rand, transporting_elt,
-intersect, Hom, kernel, Coset`
+the   docstrings   of   [`Group`](@ref),  [`comm`](@ref),  [`orbit`](@ref),
+[`orbits`](@ref),    [`transversal`](@ref),    [`words_transversal`](@ref),
+[`centralizer`](@ref),        [`stabilizer`](@ref),       [`center`](@ref),
+[`normalizer`](@ref),     [`some_words`](@ref),    [`minimal_words`](@ref),
+[`word`](@ref),    [`in`](@ref),    [`elements`](@ref),   [`length`](@ref),
+[`order`](@ref),   [`conjugacy_class`](@ref),  [`conjugacy_classes`](@ref),
+[`classreps`](@ref), [`number_of_conjugacy_classes`](@ref),
+[`fusion_conjugacy_classes`](@ref),               [`position_class`](@ref),
+[`isabelian`](@ref),        [`iscyclic`](@ref),        [`istrivial`](@ref),
+[`rand`](@ref),     [`transporting_element`](@ref),    [`intersect`](@ref),
+[`Hom`](@ref), [`kernel`](@ref), [`Coset`](@ref),[`NormalCoset`](@ref)
 """
 module Groups
 export Group, centralizer, center, order,

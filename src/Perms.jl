@@ -3,15 +3,15 @@ This package implements permutations and some functions of them. It depends
 only  on  the  package  `Combinat`.
 
 This  package  follows  the  design  of  permutations  in the GAP language.
-`Perm`s  are permutations  of the  set `1:n`,  represented internally  as a
-vector  of `n`  integers holding  the images  of `1:n`.  The integer `n` is
+[`Perm`](@ref)s  are permutations of the  set `1:n`, represented internally
+as a vector of `n` integers holding the images of `1:n`. The integer `n` is
 called  the degree  of the  permutation. In  this package,  as in  GAP (and
 contrary  to the philosophy of Magma or the package `Permutations.jl`), two
-permutations of different  degrees  can  be  multiplied (the result has the
+permutations  of different  degrees can  be multiplied  (the result has the
 larger  degree). Two permutations  are equal if  and only if  they move the
 same points in the same way, so two permutations of different degree can be
 equal; the degree is thus an implementation detail so usually it should not
-be used. One should rather use the function `last_moved`.
+be used. One should rather use the function [`last_moved`](@ref).
 
 This  design makes it  easy to multiply  permutations coming from different
 groups, like a group and one of its subgroups. It has a negligible overhead
@@ -23,9 +23,9 @@ decompositions:    the   above   permutation    has   cycle   decomposition
 `(1,2,3)(4,5)`    thus   can   be    written   `Perm(1,2,3)*Perm(4,5)`   or
 `perm"(1,2,3)(4,5)"`  (this last form  can parse a  permutation coming from
 GAP  or the default printing at the REPL).  The list of images of `1:n` can
-be  recovered from the permutation by  the function `perm`; note that equal
-permutations  with different degrees will  have different `perm`. Note that
-the  default constructor  tests the  validity of  the input  by calling the
+be recovered from the permutation by the function [`perm`](@ref); note that
+equal  permutations with different degrees will have different `perm`. Note
+that the default constructor tests the validity of the input by calling the
 `julia` function `isperm`. To have a faster constructor which does not test
 the input, use the keyword argument `check=false`.
 
@@ -112,8 +112,10 @@ to  the same images. They have methods `cmp`, `isless` (lexicographic order
 on   moved  points)  so  they  can  be  sorted.  `Perm`s  are  scalars  for
 broadcasting.
 
-Other  methods on  permutations are  `cycles, cycletype, reflection_length,
-mappingPerm, restricted, support, sortPerm, Perm_rowcol, preimage, randPerm`.
+Other  methods on  permutations are  [`cycles`](@ref), [`cycletype`](@ref),
+[`reflection_length`](@ref),  [`mappingPerm`](@ref),  [`restricted`](@ref),
+[`support`](@ref),        [`sortPerm`](@ref),        [`Perm_rowcol`](@ref),
+[`preimage`](@ref), [`randPerm`](@ref).
 
 No  method is given in  this package to enumerate  `Perm`s; you can use the
 method  `permutations` from `Combinat`,  iterate `Combinat.Permutations` or
@@ -667,6 +669,7 @@ function cycletype(a::Perm,domain;trivial=true)
   sort!(lengths,rev=true)
 end
 
+"`order(a::Perm)` the order of `a`"
 function order(a::Perm)
   ord=1
   for l in CycleLengths(a)

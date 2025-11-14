@@ -38,13 +38,14 @@ b:1 c:Group((1,2),(2,3))
 b:2 c:Group((2,3))
   δ:2=>(),3=>(2,3)
 ```
-See the docstring of `stabchain` for explanations.
+See   [`Stabchain`](@ref),[`stabchain`](@ref),[`get_stabchain`](@ref)   for
+explanations.
 
 There are efficient methods for `PermGroups` for the functions `in, length,
-elements,   position_class`.  The  function   `on_classes`  determines  the
+elements, position_class`. The function [`on_classes`](@ref) determines the
 permutation  of the conjugacy classes effected by an automorphism. Finally,
 we   give  application  to  the  group   of  simultaneous  row  and  column
-permutations of a matrix: see `stab_onmats, Perm`.
+permutations of a matrix: see [`stab_onmats`](@ref), `Perm`.
 
 finally, benchmarks on julia 1.9
 ```benchmark
@@ -257,12 +258,14 @@ function strip(g::Perm,S::Stabchain)
 end
 
 """
+`stabchain(G::PermGroup{T},B=T[];trans=transversal)where T`
+
 Constructs a `Stabchain` for `G` [starting with base B]
 
 The  code refers  to the  Handbook of  computational group theory, by Holt,
 Eick,  O'Brien, section 4.4.2.
 
-trans could be SchreierTransversal
+`trans` could be `SchreierTransversal`.
 """
 function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
   B=T.(B) # check type and make copy to be able to extend it
@@ -624,7 +627,7 @@ julia> on_classes(W,Perm(1,4,2,5,3,6))
 (2,4)(3,7)(6,8)
 ```
 """
-on_classes(G, aut)=Perm(Perms.Idef.(map(c->position_class(G,c^aut),classreps(G))))
+on_classes(G,aut)=Perm(Perms.Idef.(map(c->position_class(G,c^aut),classreps(G))))
 
 function Base.in(w::T,C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
   if length(C)<20 !isempty(searchsorted(elements(C),w))

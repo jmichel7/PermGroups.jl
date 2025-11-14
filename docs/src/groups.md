@@ -1,0 +1,42 @@
+# Groups
+```@docs
+Groups
+Group
+generators
+number_of_generators
+one(::Group)
+orders_of_generators
+ontuples
+onsets
+Groups.orbit(::AbstractVector, ::Any)
+Groups.orbits(::Group, ::Any)
+elements(::Group)
+transversal
+words_transversal
+centralizer
+center
+stabilizer
+normalizer
+word(::Group,::Any)
+comm
+length(::Group)
+classreps(::Group)
+conjugacy_classes
+conjugacy_class
+number_of_conjugacy_classes
+position_class
+fusion_conjugacy_classes
+some_words
+minimal_words
+words(::Group)
+transporting_element
+intersect(::Group,::Group)
+rand(::Group)
+isabelian
+iscyclic
+istrivial
+Hom
+kernel
+Coset
+NormalCoset
+```
