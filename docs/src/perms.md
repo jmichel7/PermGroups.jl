@@ -15,7 +15,7 @@ invpermute
 sortPerm
 randPerm
 orbit(::Perm,::Integer)
-orbits(::Perm)
+orbits(::Perm,::AbstractVector{<:Integer})
 Perms.order(::Perm)
 cycles(::Perm)
 cycletype(::Perm)

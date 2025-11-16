@@ -1,8 +1,8 @@
 """
 This module gives some basic functionality on groups.
 
-`Group`  is  an  abstract  type,  but  the  following is assumed of a group
-`G` of one of its concrete implementations:
+`Group`  is an abstract  type, but the  following is assumed  of a concrete
+implementation of a group:
 
   - The function [`generators`](@ref)`(G)` returns the list of generators of `G` (this can also be abbreviated `gens(G)`).
   - The function `one(G)` returns the identity element of `G`.
@@ -47,6 +47,56 @@ OrderedDict{Perm{Int16}, Vector{Int64}} with 6 entries:
   (1,3)   => [1, 2]
   (2,3)   => [2, 1]
   (1,3,2) => [2, 2]
+```
+### Actions
+Some  functions  like  [`orbit`](@ref)  take  as argument an `action` which
+describes how the group argument operates. Example of actions are
+
+  - '^', the default. For a point `p` and a permutation `g`, `p^g` is the image
+    of `p` by `g`. For two elements of a group `g1^g2` is conjugacy
+    `inv(g2)*g1*g2`.
+
+```julia-repl
+julia> orbits(G,1:3)
+1-element Vector{Vector{Int64}}:
+ [1, 2, 3]
+
+julia> orbits(G,elements(G)) # the conjugacy classes of G
+3-element Vector{Vector{Perm{Int16}}}:
+ [()]
+ [(2,3), (1,3), (1,2)]
+ [(1,2,3), (1,3,2)]
+```
+  - [`ontuples`](@ref)`(p,g)` is `p.^g'
+
+```julia-repl
+julia> orbits(G,[[1,2]],ontuples)
+1-element Vector{Vector{Vector{Int64}}}:
+ [[1, 2], [2, 1], [2, 3], [3, 2], [1, 3], [3, 1]]
+```
+  - [`onsets`](@ref)`(p,g)` assume that `p` is a set, represented as a sorted 
+    list without repetitions. `onsets` is the action of `g` given by
+    `(p,g)->sort!(p.^g)`.
+
+```julia-repl
+julia> orbits(G,[[1,2]],onsets)
+1-element Vector{Vector{Vector{Int64}}}:
+ [[1, 2], [2, 3], [1, 3]]
+```
+  - `onmats(m,g)` is the action of the permutation `g` by simultaneous 
+    permutation of the rows and columns of the matrix `m`.
+```julia-repl
+julia> m=[1 2 3;2 3 2;3 2 1]
+3×3 Matrix{Int64}:
+ 1  2  3
+ 2  3  2
+ 3  2  1
+
+julia> orbit(G,m,onmats)
+3-element Vector{Matrix{Int64}}:
+ [1 2 3; 2 3 2; 3 2 1]
+ [3 2 2; 2 1 3; 2 3 1]
+ [1 3 2; 3 1 2; 2 2 3]
 ```
 for  more  information  on  the  functions  defined in this module, look at
 [`Group`](@ref),
@@ -235,13 +285,15 @@ onsets(s,g)=sort!(map(x->x^g,s))
 
 `orbit(G::Group,p,action::Function=^)`
 
-the orbit of point `p` under repeated action of generators `gens`. The type
-of  point `p` should be hashable. The  default action of a group element is
-`^`.  For example if `g` is a permutation  and `p` an integer, `p^g` is the
-image  of `p` by `g`; if `h` and  `g` are group elements, then `h^g` is the
-conjugate  `inv(g)*h*g`. If  a group  is given  instead of  generators, the
-orbit under `gens(G)` is returned.
+the  orbit of  point `p`  under repeated  action of  `gens` (under repeated
+actions of `gens(G)` in the second case).
 
+The type of  point `p` should be hashable. 
+
+`action(p,g)` is a function representing the action of element `g` on point
+`p`.  The default is  `^`. For example  if `g` is  a permutation and `p` an
+integer,  `p^g`  is  the  image  of  `p`  by  `g`; if `h` and `g` are group
+elements, then `h^g` is the conjugate `inv(g)*h*g`.
 ```julia-repl
 julia> orbit([Perm(1,2),Perm(2,3)],1)
 3-element Vector{Int64}:
@@ -375,13 +427,14 @@ end
 """
 `orbits(gens::Vector,v,action=^;trivial=true)`
 
-`orbits(G,v,action=^;trivial=true)`
+`orbits(G::Group,v,action=^;trivial=true)`
 
-the  orbits on `v`  of the repeated  action of `gens`;  the elements of `v`
-should  be hashable. If a  group is given instead  of generators, the orbit
-under  `gens(G)` is returned. If `trivial=false` the one-element orbits are
-not returned.
+the  orbit of  point `p`  under repeated  action of  `gens` (under repeated
+actions of `gens(G)` in the second case).
 
+The elements of `v` should  be hashable.
+
+If `trivial=false` the one-element orbits are not returned.
 ```julia-repl
 julia> G=Group(Perm(1,2),Perm(2,3));
 julia> orbits(G,1:4)

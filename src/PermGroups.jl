@@ -925,8 +925,8 @@ julia> Perm(m,n,dims=(1,2))
 ```
 """
 function Perms.Perm{T}(m::AbstractMatrix,m1::AbstractMatrix;dims=1)where T<:Integer
-  if     dims==1 Perm{T}(collect(eachrow(m)),collect(eachrow(m1)))
-  elseif dims==2 Perm{T}(collect(eachcol(m)),collect(eachcol(m1)))
+  if     dims==1 Perm{T}(eachrow(m),eachrow(m1))
+  elseif dims==2 Perm{T}(eachcol(m),eachcol(m1))
   elseif dims==(1,2) Perm_onmats(m,m1)
   end
 end
