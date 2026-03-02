@@ -226,9 +226,9 @@ function normalizer#(G::Group,H::Group)
 end
 
 "`one(G::Group)` returns the identity element of `G`."
-Base.one(G::Group{T}) where T=one(T)
+Base.one(::Group{T}) where T=one(T)
 
-Base.eltype(G::Group{T}) where T=T
+Base.eltype(::Group{T}) where T=T
 
 "`gens(G::Group)` or `generators(G::Group)` is the `Vector` of generators of `G`."
 generators(G::Group)=G.gens #by default assume a concrete group has a field gens
@@ -655,7 +655,7 @@ function words2(G::Group{T})where T
           e=first(p)*gens(G)[k]
           if !haskey(nwords,e)
             push!(rw,e=>k)
-            for (e1,w1) in words nwords[e1*e]=k end
+            for e1 in keys(words) nwords[e1*e]=k end
           end
         end
       end
@@ -708,7 +708,7 @@ order(::Type{T},G::Group) where T<:Integer=length(T,G)
   representative::T
 end
 
-Base.eltype(C::ConjugacyClass{T,TW}) where {T,TW}=T
+Base.eltype(::ConjugacyClass{T,TW}) where {T,TW}=T
 
 function Base.show(io::IO,C::ConjugacyClass)
   print(io,"ConjugacyClass(",C.G,",",C.representative,")")
@@ -858,7 +858,9 @@ function transporting_element(W::Group,x,y,action::Function=^;dist=nothing,verbo
       if verbose print("\n") end
       return p
     end
-    dmin=minimum(map(g->(dist(action(x1, g), y),g),gens(W)))
+    dmin=let x1=x1  #boxed variable
+      minimum(map(g->(dist(action(x1, g), y),g),gens(W)))
+    end
     if dmin[1]<prev
       if verbose print("->",dmin) end
       p*=dmin[2]
@@ -999,7 +1001,7 @@ abstract type Coset{T,TW<:Group{<:T}} end
 
 Base.isone(a::Coset)=a.phi in Group(a)
 
-Base.eltype(G::Coset{T,TW}) where {T,TW}=T
+Base.eltype(::Coset{T,TW}) where {T,TW}=T
 
 Group(W::Coset)=W.G
 

@@ -78,7 +78,7 @@ using Reexport
 include("Perms.jl"); @reexport using .Perms
 include("Groups.jl"); @reexport using .Groups
 @reexport using OrderedCollections: OrderedDict
-using Combinat: tally, collectby
+using Combinat: collectby, tally
 using Primes: divisors
 export PermGroup, symmetric_group, reduced, stab_onmats, on_classes,
        get_stabchain, stabchain, Stabchain, Stablink
@@ -272,7 +272,8 @@ function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
   for x in gens(G)
     if all(b->b^x==b,B) push!(B,first_moved(x)) end
   end
-  S=Stablink{T,PG{T},trans==transversal ? OrderedDict{T,Perm{T}} : trans{T,Perm{T}}}[]
+  S=Stablink{T,PG{T},trans==transversal ? OrderedDict{T,Perm{T}} : 
+                                          trans{T,Perm{T}}}[]
   for i in eachindex(B)
     C=Group(filter(g->all(b->b^g==b,B[1:i-1]),gens(G)))
 #   if istrivial(C) break end
@@ -488,8 +489,8 @@ function Groups.transporting_elt(G::PermGroup{T},g::Perm,h::Perm;K=nothing)where
     if img[p] isa Integer
       pnts=[(img[p]^s)^h]
       if !(preimage(pnts[1],s) in orb) return end
-    # otherwise it is a list of possible  images  of  $p$,  i.e.,  points
-    # that lie in orbits under $h$ of the same length as $p$  under  $g$.
+    # otherwise it is a list of possible  images  of  `p`,  i.e.,  points
+    # that lie in orbits under `h` of the same length as `p`  under  `g`.
     else pnts=intersect(ontuples(orb,s),img[p]::Vector{T})
     end
 
@@ -517,7 +518,7 @@ function Groups.transporting_elt(G::PermGroup{T},g::Perm,h::Perm;K=nothing)where
 
   orbsh=orbits(h, first_moved(G):last_moved(G))
 
-  # compute a stabchain for $G$ with a base that has as often as
+  # compute a stabchain for `G` with a base that has as often as
   # possible βᵢᵍ= βᵢ₊₁.
   orbsg=orbits(g, first_moved(G):last_moved(G))
   sort!(orbsg,by=x->-length(x))
@@ -527,7 +528,7 @@ function Groups.transporting_elt(G::PermGroup{T},g::Perm,h::Perm;K=nothing)where
   for i in 2:length(st) st[i].c.stabchain=st[i:end] end
 #  @show bb
 
-  # for each length make a set of points in orbits of that length under $h$
+  # for each length make a set of points in orbits of that length under `h`
   lensh=Dict{T,Vector{T}}()
   for orb in orbsh
     if !haskey(lensh,length(orb)) lensh[length(orb)]=sort(orb)
@@ -540,16 +541,13 @@ function Groups.transporting_elt(G::PermGroup{T},g::Perm,h::Perm;K=nothing)where
   for (i,bpt)  in enumerate(bb)
     # if this basepoint is the image of an earlier  basepoint  store  it,
     p=preimage(bpt,g)
-    if p in bb[1:i-1] img[bpt]=p
-    # otherwise store the points in orbits under $h$ of the same  length.
-    else
-      img[bpt]=lensh[length(orbit(g,bpt))]
-    end
+    # otherwise store the points in orbits under `h` of the same  length.
+    img[bpt]=p in bb[1:i-1] ? p : lensh[length(orbit(g,bpt))]
   end
 # @show img
 #  @show g,h
 
-  # find a subgroup  $K$  of  $G$ which preserves the conjugation property,
+  # find a subgroup  `K`  of  `G` which preserves the conjugation property,
   # i.e., g^x=h implies g^{x*k}=h for all x∈G,  k∈K.
   # any subgroup of Centralizer(G,h) will do,  for example Group(h),
   # we add powers of h so that we know generators for stabilizers of K.
@@ -565,7 +563,7 @@ function Groups.transporting_elt(G::PermGroup{T},g::Perm,h::Perm;K=nothing)where
     gg=unique(append!(gg,gens(center(G))))
   end
 
-  # search through the whole group $G = G*Id$  for a  conjugating  element.
+  # search through the whole group `G = G*Id`  for a  conjugating  element.
   recur(G,one(G),gg)
 end
 
@@ -592,7 +590,7 @@ cycletypes(W::Union{Group{<:Perm},NormalCoset{<:Perm,<:Group}},x)=
 function positions_class(W::Union{Group{<:Perm},NormalCoset{<:Perm,<:Group}},w)
   ct=cycletypes(W,w)
   cl=conjugacy_classes(W)
-  l=findall(C->cycletypes(C)==ct,cl)
+  l=findall(c->cycletypes(c)==ct,cl)
   if length(l)==1 return l end
   if W isa NormalCoset Z=centralizer(center(Group(W)),W.phi)
   else Z=center(W) end
@@ -718,7 +716,7 @@ function Groups.elements(G::PermGroup)
     if isempty(t) return [one(G)] end
     res=t[1]
     for i in 2:length(t)
-      res=vcat(map(x->res.*x,t[i])...)
+      res=reduce(vcat,map(x->res.*x,t[i]))
     end
     res
    end::Vector{eltype(G)}
@@ -730,7 +728,7 @@ Base.rand(G::PermGroup)=prod(rand.(map(x->collect(values(x.δ)),reverse(get_stab
 # computes "canonical" element of W.phi
 function reduced(W::PermGroup,phi)
   for C in get_stabchain(W)
-    (kw,e)=minimum((k^phi,e) for (k,e) in C.δ)
+    (_,e)=minimum((k^phi,e) for (k,e) in C.δ)
     phi=e*phi
   end
   phi
@@ -769,6 +767,8 @@ Groups.Group(a::Perm...)=Group(collect(a))
 symmetric_group(n::Int)=Group([Perm(i,i+1) for i in 1:n-1],Perm(;degree=n))
 
 #---------------- application to matrices ------------------------------
+
+# find block structure for onmats
 function invblocks(m,extra=nothing)
   if isnothing(extra) extra=zeros(Int,size(m,1)) end
   blk1=[collect(axes(m,1))]
@@ -813,7 +813,6 @@ Group((1,16),(4,19),(11,26),(14,29),(2,17),(7,22),(8,23),(13,28),(6,21),(9,24),(
 ```
 """
 function stab_onmats(M::AbstractMatrix;extra=nothing,verbose=false)
-  k=length(M)
   blocks=sort(invblocks(M,extra),by=x->-length(x))
   g=PermGroup()
   I=Int[]
@@ -885,7 +884,6 @@ function Perm_onmats(M,N,m=nothing,n=nothing;verbose=false)
   for r in l
     append!(I, r[1])
     append!(J, r[2])
-    s=length(r[1])
     g=Group(vcat(gens(g), gens(r[3])))
     p=mappingPerm(I, eachindex(I))
     h=Group(gens(g).^p)

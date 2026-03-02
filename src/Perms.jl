@@ -128,7 +128,7 @@ export restricted, orbit, orbits, order, Perm, last_moved, cycles,
   reflength, reflection_length,
   mappingPerm, sortPerm, Perm_rowcol, randPerm, invpermute, onmats
 
-using Combinat: tally, collectby, arrangements
+using Combinat: arrangements, collectby, tally
 
 const Idef=Int16 # the default type T for Perms
 
@@ -154,7 +154,7 @@ struct Perm{T<:Integer}<:AbstractPermutations.AbstractPermutation
   global Perm_(d::AbstractVector{T}) where T=new{T}(d)
 end
 
-Base.eltype(p::Perm{T}) where T=T
+Base.eltype(::Perm{T}) where T=T
 
 # next 3 methods for AbstractPermutations tests to pass
 AbstractPermutations.degree(p::Perm)=last_moved(p)
@@ -232,7 +232,7 @@ macro perm_str(s::String)
   if match(r"^\s*\(\s*\)\s*$",s)!==nothing return res end
   while match(r"^\s*$"s,s)===nothing
     m=match(r"^\s*\((\s*\d+\s*,)+\s*\d+\)"s,s)
-    if m===nothing throw(ArgumentError("malformed permutation: ",s)) end
+    if m===nothing throw(ArgumentError("malformed permutation: "*s)) end
     s=s[m.match.ncodeunits+1:end]
     res*=Perm{T}(Meta.parse(replace(m.match,r"\s*"=>"")).args...)
   end
@@ -301,9 +301,8 @@ Base.broadcastable(p::Perm)=Ref(p)
 
 Base.typeinfo_implicit(::Type{Perm{T}}) where T=T==Idef
 
-function Base.promote_rule(a::Type{Perm{T1}},b::Type{Perm{T2}})where {T1,T2}
+Base.promote_rule(::Type{Perm{T1}},::Type{Perm{T2}})where {T1,T2}=
   Perm{promote_type(T1,T2)}
-end
 
 function extend!(a::Perm{T},n::Integer)where T
   if length(a.d)<n append!(a.d,T(length(a.d)+1):T(n)) end
@@ -446,10 +445,6 @@ function invpermute(l::AbstractVector,a::Perm)
   res=similar(l)
 @inbounds for i in eachindex(l) res[i^a]=l[i] end
   res
-end
-
-function Base.:^(l::AbstractVector,a::Perm)
-  error("**** using old form\n")
 end
 
 """
@@ -609,8 +604,8 @@ struct CycleLengths{T}
   end
 end
 
-Base.IteratorSize(x::CycleLengths)=Base.SizeUnknown()
-Base.eltype(x::CycleLengths)=Int
+Base.IteratorSize(::CycleLengths)=Base.SizeUnknown()
+Base.eltype(::CycleLengths)=Int
 
 @inline function Base.iterate(c::CycleLengths,k=1)
   for i in k:length(c.to_visit)
@@ -815,7 +810,8 @@ function Perm_rowcol(m1::AbstractMatrix, m2::AbstractMatrix;debug=false)
   if size(m1)!=size(m2) throw(ArgumentError("not same dimensions")) end
   if isempty(m1) return [Perm(), Perm()] end
   dist(m,n)=count(i->m[i]!=n[i],eachindex(m))
-  dist(m,n,dim,l)=dim==1 ? dist(m[l,:],n[l,:]) : dist(m[:,l],n[:,l])
+  dist(m,n,dim,l)=dim==1 ? dist((@view m[l,:]),@view n[l,:]) : 
+                           dist((@view m[:,l]),@view n[:,l])
   mm=[m1,m2]
   if debug print("# ", dist(m1, m2), "") end
   rcperm=[Perm(), Perm()],[Perm(), Perm()]
@@ -827,8 +823,10 @@ function Perm_rowcol(m1::AbstractMatrix, m2::AbstractMatrix;debug=false)
     for dim in 1:2
       for g in crg[dim]
         invars=map(1:2) do i
-          invar=map(j->map(k->tally(dim==1 ? mm[i][j,k] : mm[i][k,j]),
+          invar=let crg=crg #boxed variable
+            map(j->map(k->tally(dim==1 ? mm[i][j,k] : mm[i][k,j]),
                            crg[3-dim]), g)
+          end
           p=mappingPerm(vcat(collectby(invar,g)...), g)
           rcperm[dim][i]*=p
           mm[i]=invpermute(mm[i],p,dims=dim)
