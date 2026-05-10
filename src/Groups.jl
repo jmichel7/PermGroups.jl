@@ -335,8 +335,8 @@ orbit(G::Group,pnt,action::Function=^)=orbit(gens(G),pnt,action)
 """
 `transversal(G::Group,p,action::Function=^)`
 
-returns  an `OrderedDict` `t` with keys  `orbit(G,p,action)` and where `t[x]` is an
-element  of  `G`  such  that  `x==action(p,t[x])`.  Like  `orbit`,  it thus
+returns an `OrderedDict` `t` with keys `orbit(G,p,action)` and where `t[x]`
+is  an element of `G` such  that `x==action(p,t[x])`. Like `orbit`, it thus
 requires the type of `p` to be hashable.
 
 ```julia-repl
@@ -728,7 +728,7 @@ function conjugacy_classes(G::Group{T})where T
       # assumes l sortable
       map(l->ConjugacyClass(G,minimum(l),Dict{Symbol,Any}(:elements=>sort(l))),res)
     end
-  end
+  end::Vector{ConjugacyClass{T,typeof(G)}}
 end
 
 function elements(C::ConjugacyClass)
@@ -798,8 +798,8 @@ end
 """
 `orders_of_generators(G::Group)` or `ordergens`
 
-The list of orders of the generators (this may be expensive to compute
-so could be worth being cached in `G`).
+The  list of  orders of  the generators  (cached in  `G` since  this may be
+expensive to compute).
 """
 orders_of_generators(W)=get!(()->order.(gens(W)),W,:ordergens)::Vector{Int}
 const ordergens=orders_of_generators
@@ -1073,7 +1073,7 @@ function elements(C::ConjugacyClass{T,TW})where {T,TW<:Coset}
   end::Vector{T}
 end
 
-function conjugacy_classes(G::NormalCoset)
+function conjugacy_classes(G::NormalCoset{T})where T
   get!(G,:classes) do
     if haskey(G,:classreps)
       [ConjugacyClass(G,x,Dict{Symbol,Any}()) for x in G.classreps]
@@ -1082,7 +1082,7 @@ function conjugacy_classes(G::NormalCoset)
       G.classreps=getproperty.(res,:representative)
       res
     end
-  end
+  end::Vector{ConjugacyClass{T,typeof(G)}}
 end
 
 function position_class(G::NormalCoset,g)

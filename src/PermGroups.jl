@@ -251,10 +251,10 @@ function strip(g::Perm,S::Stabchain)
   for (i,S) in enumerate(S)
     β=S.b^g
     if β==S.b continue end
-    if !haskey(S.δ,β) return g,i end
+    if !haskey(S.δ,β) return (g,i) end
     Perms.mul!(g,inv(S.δ[β]))
   end
-  g,length(S)+1
+  (g,length(S)+1)
 end
 
 """
@@ -267,31 +267,34 @@ Eick,  O'Brien, section 4.4.2.
 
 `trans` could be `SchreierTransversal`.
 """
-function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
+#function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)::Vector{Stablink{T,PG{T},trans==transversal ? OrderedDict{T,Perm{T}} : trans{T,Perm{T}}}}where T
+function stabchain(G::PermGroup{T},B=T[];weed=true)::Vector{Stablink{T,PG{T},OrderedDict{T,Perm{T}}}}where T
   B=T.(B) # check type and make copy to be able to extend it
   for x in gens(G)
     if all(b->b^x==b,B) push!(B,first_moved(x)) end
   end
-  S=Stablink{T,PG{T},trans==transversal ? OrderedDict{T,Perm{T}} : 
-                                          trans{T,Perm{T}}}[]
+# S=Stablink{T,PG{T},trans==transversal ? OrderedDict{T,Perm{T}} : trans{T,Perm{T}}}[]
+  S=Stablink{T,PG{T},OrderedDict{T,Perm{T}}}[]
   for i in eachindex(B)
     C=Group(filter(g->all(b->b^g==b,B[1:i-1]),gens(G)))
 #   if istrivial(C) break end
-    t=trans(C,B[i])
+#   t=trans(C,B[i])
+    t=transversal(C,B[i])
     push!(S,Stablink(B[i],C,t))
   end
   i=length(S)
   while i>=1
-    for (β,wᵦ) in S[i].δ, x in gens(S[i].c)
-      h=wᵦ*x/S[i].δ[β^x] # possibly new Schreier generator of C_G(B[1:i])
+    for (β::T,wᵦ::Perm{T}) in S[i].δ, x in gens(S[i].c)::Vector{Perm{T}}
+      h=wᵦ*x/S[i].δ[β^x]::Perm{T} # possibly new Schreier generator of C_G(B[1:i])
       if isone(h) continue end
       h,j=strip(h,S)
       if isone(h) continue end
       for l in i+1:j # now h is in C[l] for those l
         if l>length(S)
-          b=first_moved(h)
+          b=first_moved(h)::T
           c=Group(h)
-          push!(S,Stablink(b,c,trans(c,b)))
+#         push!(S,Stablink(b,c,trans(c,b)))
+          push!(S,Stablink(b,c,transversal(c,b)))
         else
           push!(gens(S[l].c),h)
           Groups.extend_transversal!(S[l].δ,S[l].c)
@@ -303,17 +306,7 @@ function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)where T
     i-=1
     @label nexti
   end
-  if weed
-    I=filter(eachindex(S))do i
-      if istrivial(S[i].c) return false end
-      if length(S[i].δ)==1 return false end
-      true
-    end
-#   if length(S)-length(I)>5
-#     @show G,B
-#   end
-    S=S[I]
-  end
+  if weed filter!(SS->!istrivial(SS.c) && length(SS.δ)>1,S) end
   S
 end
 
@@ -333,9 +326,9 @@ Groups.stabilizer(G::PermGroup,p::Integer)=stabilizer(G,[p],ontuples)
 
 function Groups.stabilizer(G::PermGroup,p::AbstractVector{<:Integer},::typeof(ontuples))
   S=stabchain(G,p)
-  p=findfirst(s->!(s.b in p),S)
-  if isnothing(p) return Group(one(G)) end
-  S[p].c
+  i=findfirst(s->!(s.b in p),S)
+  if isnothing(i) return Group(one(G)) end
+  S[i].c
 end
 
 """
