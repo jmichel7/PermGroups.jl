@@ -8,7 +8,8 @@ function mytest(file::String,cmd::String,man::String)
   exec=replace(exec,r"^\s*"=>"")
   if exec==man return true end
   inds=collect(eachindex(exec))
-  i=inds[findfirst(i->i<=lastindex(man) && exec[i]!=man[i],inds)]
+  i=findfirst(i->i<=lastindex(man) && exec[i]!=man[i],inds)
+  if i==nothing i=ncodeunits(man)+1 else i=inds[i] end
   print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
   false
 end
@@ -53,7 +54,7 @@ end
 @test mytest("Groups.jl","transporting_elt(g,[1,2,3,4],[3,4,5,2],(s,g)->s.^g)","nothing")
 @test mytest("Groups.jl","S=Group(Perm(1,2),Perm(2,3))","Group((1,2),(2,3))")
 @test mytest("Groups.jl","T=Group(Perm(1,2))","Group((1,2))")
-@test mytest("Groups.jl","h=Hom(S,T,[T(1),T(1)])","Hom(Group((1,2),(2,3))→ Group((1,2));[(1,2), (2,3)]↦ [(1,2), (1,2)]")
+@test mytest("Groups.jl","h=Hom(S,T,[T(1),T(1)])","Hom(Group((1,2),(2,3))→ Group((1,2));[(1,2), (2,3)]↦ [(1,2), (1,2)])")
 @test mytest("Groups.jl","h(S(1,2))","()")
 @test mytest("Groups.jl","G=Group([[-1 -1;1 0]])","Group([[-1 -1; 1 0]])")
 @test mytest("Groups.jl","elements(G)","3-element Vector{Matrix{Int64}}:\n [1 0; 0 1]\n [-1 -1; 1 0]\n [0 1; -1 -1]")

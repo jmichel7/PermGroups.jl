@@ -267,8 +267,8 @@ Eick,  O'Brien, section 4.4.2.
 
 `trans` could be `SchreierTransversal`.
 """
-#function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)::Vector{Stablink{T,PG{T},trans==transversal ? OrderedDict{T,Perm{T}} : trans{T,Perm{T}}}}where T
 function stabchain(G::PermGroup{T},B=T[];weed=true)::Vector{Stablink{T,PG{T},OrderedDict{T,Perm{T}}}}where T
+#function stabchain(G::PermGroup{T},B=T[];trans=transversal,weed=true)::Vector{Stablink{T,PG{T},trans==transversal ? OrderedDict{T,Perm{T}} : trans{T,Perm{T}}}}where T
   B=T.(B) # check type and make copy to be able to extend it
   for x in gens(G)
     if all(b->b^x==b,B) push!(B,first_moved(x)) end
