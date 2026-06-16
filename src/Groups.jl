@@ -148,7 +148,7 @@ export Group, centralizer, center, order,
   normalizer, orbit, orbits,
   position_class, stabilizer,
   transversal, words_transversal, word, elements, kernel, ConjugacyClass,
-  ontuples,onsets,
+  ontuples,onsets, issurjective,
   getp, @GapObj
 
 import ..Perms: orbit, orbits, order # suppress if used as indep. package
@@ -905,7 +905,13 @@ function Base.intersect(G::Group, H::Group) # horrible implementation
 end
 
 #------------------- homomorphisms ----------------------------------------
-"""
+@GapObj struct Hom{T,T1}
+  source::Group{T}
+  target::Group{T1}
+  images::Vector{T1}
+end
+
+@doc """
 `Hom(S::Group,T::Group,images)`
 
 builds an object representing the homomorphism from `S` to `T` which maps
@@ -924,25 +930,31 @@ Hom(Group((1,2),(2,3))→ Group((1,2));[(1,2), (2,3)]↦ [(1,2), (1,2)]
 julia> h(S(1,2)) # the image by h
 ()
 ```
-"""
-struct Hom{T,T1}
-  source::Group{T}
-  target::Group{T1}
-  images::Vector{T1}
-end
+""" Hom
+
+Hom(W,W1,v)=Hom(W,W1,v,Dict{Symbol,Any}())
 
 function Base.show(io::IO,h::Hom)
+  t(h)=haskey(h,:words) ? h.words : h.images
+  s(h)=haskey(h,:words) ? map(i->[i],1:ngens(h.source)) : gens(h.source)
   if h.source==h.target
-    print(io,"Aut(",h.source,";",gens(h.source),"↦ ",h.images)
-  else
-    print(io,"Hom(",h.source,"→ ",h.target,";",gens(h.source),"↦ ",h.images)
+    if issurjective(h) print(io,"Aut(",h.source,";",s(h),"↦ ",t(h),")")
+    else print(io,"End(",h.source,";",s(h),"↦ ",t(h),")")
+    end
+  else print(io,"Hom(",h.source,"→ ",h.target,";",s(h),"↦ ",t(h),")")
+  end
+end
+
+function issurjective(h::Hom)
+  get!(h,:surjective)do
+    length(Group(h.images))==length(h.source)
   end
 end
 
 "`kernel(h::Hom)` the kernel of the homomorphism `h`"
 function kernel(h::Hom)
   if all(isone,h.images) return h.source
-  elseif length(h.source)==length(Group(h.images))
+  elseif issurjective(h)
     return Group(empty(gens(h.source)),one(h.source))
   elseif length(h.source)<1000
     return Group(filter(x->isone(h(x)),elements(h.source)))
@@ -950,10 +962,25 @@ function kernel(h::Hom)
   end
 end
 
+function words(h::Hom)
+  get!(h,:words)do
+    map(x->word(h.target,x),h.images)
+  end
+end
+
+Base.:*(a::Hom,b::Hom)=Hom(a.source,b.target,a.images.^Ref(b))
+
 "If `h isa Hom` then `h(w)` is the image of `w` by `h`"
 (h::Hom)(w)=isone(w) ? one(h.target) : prod(
   (i>0 ? h.images[i] : inv(h.images[-i])) for i in word(h.source,w))
 
+Base.:^(w,h::Hom)=h(w)
+
+function Base.:^(h::Hom,p)
+  if p in h.target
+    Hom(h.source,h.target,h.images.^p)
+  end
+end
 #------------------- "abstract" concrete groups -------------------------------
 @GapObj struct Groupof{T}<:Group{T}
   gens::Vector{T}
