@@ -159,7 +159,10 @@ using OrderedCollections: OrderedDict
 A  variation of get! where it is assumed f(o) sets o.p but not assumed that
 f returns o.p, because f sets several keys at once...
 """
-getp(f::Function,o,p::Symbol)=get!(()->(f(o);getfield(o,:prop)[p]),getfield(o,:prop),p)
+getp(f::Function,o,p::Symbol)=get!(o,p)do
+  f(o)
+  getproperty(o,p)
+end
 
 """
 `@GapObj struct...`
@@ -210,7 +213,7 @@ macro GapObj(e)
          getfield(o,:prop)[s]),
    :(Base.setproperty!(o::$T,s::Symbol,v)=hasfield($T,s) ? setfield!(o,s,v) :
          getfield(o,:prop)[s]=v),
-   :(Base.haskey(o::$T,s::Symbol)=haskey(getfield(o,:prop),s)),
+   :(Base.haskey(o::$T,s::Symbol)=hasfield($T,s)||haskey(getfield(o,:prop),s)),
    :(Base.getindex(o::$T,s::Symbol)=getindex(getfield(o,:prop),s)),
    :(Base.propertynames(o::$T)=(fieldnames($T)...,Tuple(keys(getfield(o,:prop)))...)),
    :(Base.delete!(o::$T,s::Symbol)=delete!(getfield(o,:prop),s)),
