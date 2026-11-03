@@ -1,7 +1,8 @@
 """
 This  module is a port  of some GAP functionality  on permutation groups. A
-`PermGroup` is a `Group` where `gens` are `Perm`s. It depends on the modules
-`Groups` and `Perms` which could be independent packages on their own.
+`PermGroup`  is  a  `Group`  where  `gens`  are  `Perm`s. It depends on the
+modules  `Groups` and `Perms` which could  be independent packages on their
+own, and on the packages Reexport, OrderedCollections, Combinat, Primes.
 
 ```julia-repl
 julia> G=Group([Perm(i,i+1) for i in 1:2])
@@ -386,6 +387,95 @@ function search(S::Stabchain{T},test,property;all=true)where T
   end
 end
 
+#---------- beginning of AI-generated
+export subgroup_search #, image_test
+
+"find one h ∈ G^(l) with b_l^h == target and prop(h); return `nothing` if none"
+function find_element(S::Stabchain, l::Int, target, prop, test, stats)
+  m = length(S)
+  function go(k::Int, u)                    # u ∈ G^(k-1)
+    stats !== nothing && (stats[] += 1)
+    if k > m
+      return prop(u) ? u : nothing
+    end
+    if test !== nothing && k > l && !test(u, k-1)
+      return nothing
+    end
+    for α in keys(S[k].δ)
+      u1 = S[k].δ[α] * u
+      # b_k^(u1) == α^u; at the constrained level only one α can work
+      if k == l && α^u != target continue end
+      r = go(k+1, u1)
+      r === nothing || return r
+    end
+    nothing
+  end
+  go(l, one(Perm{eltype(S[1].b)}))
+end
+
+#"""
+#    image_test(base, ok)
+#
+#Build  a pruning  predicate for  [`subgroup_search`](@ref) from a predicate
+#`ok`  on *partial images*. If  `imgs` is the vector  of images of the first
+#`l`  base  points  under  the  current  partial product, `image_test` calls
+#`ok(imgs)` and prunes when it returns `false`.
+#
+#`ok` must be sound: `ok(imgs) == false` must mean that no element extending
+#that  partial assignment  satisfies `prop`.  This is  the shape  of all the
+#pruning   tests  in   the  applications   (centralizers,  set  stabilizers,
+#intersections).
+#"""
+#image_test(base, ok) = (g, l) -> ok([b^g for b in base[1:l]])
+
+"""
+`subgroup_search(G,prop;base=nothing,K=nothing,test=nothing,stats=nothing)`
+
+Return `H={g∈G∣prop(g)}` as a `PermGroup`, assuming this predicate describes
+a subgroup. If `K` given assume it is a subgroup of `H`.
+
+if given `base` is a base of `G`
+
+if given `test(g,k)->Bool` is a *sound* pruning predicate
+  returning false for g after k base images are fixed asserts that 
+  no element s with b_i^(s*g)==b_i^g (i <= k) satisfies prop.
+
+`stats` is a `Ref{Int}` incremented for every search node.
+"""
+function subgroup_search(G::PermGroup{T}, prop; base=nothing, K=nothing,
+                         test=nothing, stats=nothing, verbose=false) where T
+  B = base === nothing ? PermGroups.base(get_stabchain(G)) : Vector{T}(base)
+  S = stabchain(G, B)
+  B = PermGroups.base(S)          # stabchain may have extended the base
+  if isempty(S)                    # trivial group
+    return Group(Perm{T}[x for x in elements(G) if prop(x)])
+  end
+  gensK = K === nothing ? Perm{T}[] : collect(Perm{T}, gens(K))
+  # images already proved not to lie in H (per level)
+  ruledout = [Set{T}() for _ in S]
+  for l in eachindex(S)
+    bl = S[l].b
+    while true
+      # generators of a subgroup of K ∩ G^(l) = H ∩ G^(l)
+      Kl = Group(Perm{T}[g for g in gensK if all(i -> S[i].b^g == S[i].b, 1:l-1)])
+      known = Set(orbit(gens(Kl), bl))
+      cand = [a for a in keys(S[l].δ) if !(a in known) && !(a in ruledout[l])]
+      isempty(cand) && break
+      α = first(cand)
+      h = find_element(S, l, α, prop, test, stats)
+      verbose && println("level $l: target $α -> ", h === nothing ? "no element" : "found $h")
+      if h === nothing
+        push!(ruledout[l], α)
+      else
+        push!(gensK, h)
+      end
+    end
+  end
+  G2 = Group(gensK)
+  isempty(gens(G2)) ? Group(Perm{T}[one(Perm{T})]) : PermGroups.Groups.weedgens(G2)
+end
+#end of AI
+
 const debug=Ref(false)
 
 function Groups.stabilizer(W::PermGroup,b::AbstractVector{<:Integer},::typeof(onsets))
@@ -399,14 +489,13 @@ function Groups.stabilizer(W::PermGroup,b::AbstractVector{<:Integer},::typeof(on
     return Groups.weedgens(res)
   end
   b=sort(b)
-  S=stabchain(W,b)
   test(g,l)=all(i->b[i]^g in b,1:min(l,length(b)))
   property(g)=onsets(b,g)==b
-  Groups.weedgens(Group(search(S,test,property)))
+  Groups.weedgens(subgroup_search(W,property;test,base=b))
 end
 
-if false
-function Groups.stabilizer(W::PermGroup,g::Perm)
+# another attempt
+function stabilizer3(W::PermGroup,g::Perm)
   if debug[] println("using stabilizer(PG,Perm)") end
   cc=orbits(g,1:last_moved(W),trivial=true)
   sort!(cc,by=length)
@@ -434,19 +523,19 @@ function Groups.stabilizer(W::PermGroup,g::Perm)
     return true
   end
   property(h)=g^h==g
-  Groups.weedgens(Group(search(S,test,property)))
-end
+  subgroup_search(W,property;base=b,test,K=Group(vcat(g,filter(property,gens(W)))))
 end
 
-#function Groups.stabilizer(W::PermGroup,p::AbstractVector{<:Perm},::typeof(onsets))
-#  if debug[] println("using stabilizer(PG,Vec{Perm},onsets)") end
-#  S=get_stabchain(W)
-#  b=base(S)
-#  test(h,l)=all(g1->any(g->all(i->b[i]^(inv(h)*g1)==b[i]^(g*inv(h)),1:min(l,length(b))),p),p)
-#  property(g)=onsets(p,g)==p
-#  res=Group(search(S,test,property))
-#  Groups.weedgens(res)
-#end
+# encore buggé pour E6 et unique(refls(D4:2:5))
+function stabilizer4(W::PermGroup,p::AbstractVector{<:Perm},::typeof(onsets))
+  if debug[] println("using stabilizer(PG,Vec{Perm},onsets)") end
+  S=get_stabchain(W)
+  b=base(S)
+  test(h,l)=all(g1->any(g->(u=h\g1;v=g/h;all(i->b[i]^u==b[i]^v,1:min(l,length(b)))),p),p)
+  p=sort(p)
+  property(g)=onsets(p,g)==p
+  subgroup_search(W,property;test)
+end
 
 function Groups.transporting_elt(W::PermGroup,b::AbstractVector{<:Integer},b1::AbstractVector{<:Integer},::typeof(ontuples))
   if debug[] println("using transp(PG,Vec{Int},Vec{Int},ontuples)") end
@@ -675,17 +764,23 @@ end
 
 #------------------------- iteration for PermGroups -----------------------
 """
-`length(G::PermGroup;type=Int)`  the  number  of  elements of `G`, computed
-with  integers of type `type` (use `Int128` or `BigInt` for big permutation
-groups).
+`length(G::PermGroup)`  the  number  of  elements of `G`. Note that the result
+can be an Ìnt128`or a ìgInt`depending on the size of `G`.
 """
-function Base.length(::Type{T},G::PermGroup)where T
+function Base.length(G::PermGroup)
   get!(G,:length)do
-    prod(x->T(length(x.δ)),get_stabchain(G);init=1)
-  end::T
+    T=Int;l=0
+    while true
+    try
+      l=reduce(Base.checked_mul,map(x->T(length(x.δ)),get_stabchain(G));init=1)
+      break
+    catch
+      T=widen(T)
+    end
+    end
+    l
+  end
 end
-
-Base.length(G::PermGroup)=length(Int,G)
 
 function Base.iterate(G::PermGroup{T}) where T
   I=ProdIterator(map(x->values(x.δ),reverse(get_stabchain(G))))

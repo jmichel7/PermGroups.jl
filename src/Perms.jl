@@ -1,6 +1,6 @@
 """
 This  module implements  permutations and  associated functions. It depends
-only on the package `Combinat`.
+only   on   the   packages   `Combinat` and `AbstractPermutations`.
 
 We  follow the design of permutations  in the GAP language. [`Perm`](@ref)s
 are  permutations of the  set `1:n`, represented  internally as a vector of
@@ -222,19 +222,19 @@ Perm{UInt8}: (1,2)(3,4)
 ```
 """
 macro perm_str(s::String)
-  s=replace(s,"\\n"=>"\n")
+  s=replace(s,r"\s"=>"")
   if (m=match(r"^Perm{(\w*)}:",s))!=nothing
     T=eval(Meta.parse(m[1]))
     s=s[m.match.ncodeunits+1:end]
   else T=Idef
   end
   res=Perm{T}()
-  if match(r"^\s*\(\s*\)\s*$",s)!==nothing return res end
-  while match(r"^\s*$"s,s)===nothing
-    m=match(r"^\s*\((\s*\d+\s*,)+\s*\d+\)"s,s)
+  if match(r"^\(\)$",s)!==nothing return res end
+  while match(r"^$"s,s)===nothing
+    m=match(r"^\((\d+,)+\d+\)"s,s)
     if m===nothing throw(ArgumentError("malformed permutation: "*s)) end
     s=s[m.match.ncodeunits+1:end]
-    res*=Perm{T}(Meta.parse(replace(m.match,r"\s*"=>"")).args...)
+    res*=Perm{T}(Meta.parse(m.match).args...)
   end
   res::Perm
 end
@@ -292,6 +292,8 @@ end
 #---------------------------------------------------------------------
 Base.one(p::Perm{T}) where T=Perm{T}(;degree=length(p.d))
 Base.one(::Type{Perm{T}}) where T=Perm_(T[])
+Base.one(::Type{Perm})=one(Perm{Idef})
+
 Base.isone(p::Perm)=@inbounds all(i->p.d[i]==i,eachindex(p.d))
 Base.copy(p::Perm)=Perm_(copy(p.d))
 Base.deepcopy(p::Perm)=copy(p)
@@ -808,7 +810,7 @@ true
 """
 function Perm_rowcol(m1::AbstractMatrix, m2::AbstractMatrix;debug=false)
   if size(m1)!=size(m2) throw(ArgumentError("not same dimensions")) end
-  if isempty(m1) return [Perm(), Perm()] end
+  if isempty(m1) return (Perm(), Perm()) end
   dist(m,n)=count(i->m[i]!=n[i],eachindex(m))
   dist(m,n,dim,l)=dim==1 ? dist((@view m[l,:]),@view n[l,:]) : 
                            dist((@view m[:,l]),@view n[:,l])

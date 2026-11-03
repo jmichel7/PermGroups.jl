@@ -35,20 +35,6 @@ function Base.collect(S::Stabchain)
   end
 end
 
-function subgroupsearch(S,H,test,property)
-  k=length(s)
-  K=H
-  f=l=k
-  n=maximum(s->maximum(keys(s.δ)),S)
-  base=map(s->s.b,S)
-  ord=invperm(vcat(base,setdiff(1:n,base)))
-  SK=stabchain(K,base)
-  R=map(SK)do sl
-   p=partialsort!(collected(keys(sl.δ)),1:2,by=i->ord[i])
-   if p[1]==sl.b return p[2] else return p[1] end
-  end
-end
-
 # copied from gap3 but not much faster than current version
 function RepresentativeSet(G,d,e)
   # search for an element in a coset S*s of some stabilizer S of G.

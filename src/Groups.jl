@@ -1,5 +1,6 @@
 """
-This module gives some basic functionality on groups.
+This  module gives some  basic functionality on  groups. It depends only on
+the package `OrderedCollections`.
 
 `Group`  is an abstract  type, but the  following is assumed  of a concrete
 implementation of a group:
@@ -148,7 +149,7 @@ export Group, centralizer, center, order,
   normalizer, orbit, orbits,
   position_class, stabilizer,
   transversal, words_transversal, word, elements, kernel, ConjugacyClass,
-  ontuples,onsets, issurjective,
+  ontuples,onsets, isinjective,
   getp, @GapObj
 
 import ..Perms: orbit, orbits, order # suppress if used as indep. package
@@ -941,23 +942,31 @@ function Base.show(io::IO,h::Hom)
   t(h)=haskey(h,:words) ? h.words : h.images
   s(h)=haskey(h,:words) ? map(i->[i],1:ngens(h.source)) : gens(h.source)
   if h.source==h.target
-    if issurjective(h) print(io,"Aut(",h.source,";",s(h),"↦ ",t(h),")")
+    if isinjective(h) print(io,"Aut(",h.source,";",s(h),"↦ ",t(h),")")
     else print(io,"End(",h.source,";",s(h),"↦ ",t(h),")")
     end
   else print(io,"Hom(",h.source,"→ ",h.target,";",s(h),"↦ ",t(h),")")
   end
 end
 
-function issurjective(h::Hom)
-  get!(h,:surjective)do
+"`isinjective(h::Hom)` whether `h` is injective"
+function isinjective(h::Hom)
+  get!(h,:isinjective)do
     length(Group(h.images))==length(h.source)
+  end
+end
+
+"`issurjective(h::Hom)` whether `h` is surjective"
+function issurjective(h::Hom)
+  get!(h,:issurjective)do
+    length(Group(h.images))==length(h.target)
   end
 end
 
 "`kernel(h::Hom)` the kernel of the homomorphism `h`"
 function kernel(h::Hom)
   if all(isone,h.images) return h.source
-  elseif issurjective(h)
+  elseif isinjective(h)
     return Group(empty(gens(h.source)),one(h.source))
   elseif length(h.source)<1000
     return Group(filter(x->isone(h(x)),elements(h.source)))

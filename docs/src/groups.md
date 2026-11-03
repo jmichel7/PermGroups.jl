@@ -35,6 +35,8 @@ rand(::Group)
 isabelian
 iscyclic
 istrivial
+issurjective
+isinjective
 Hom
 kernel
 Coset
