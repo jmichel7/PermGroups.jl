@@ -437,17 +437,16 @@ a subgroup. If `K` given assume it is a subgroup of `H`.
 if given `base` is a base of `G`
 
 if given `test(g,k)->Bool` is a *sound* pruning predicate
-  returning false for g after k base images are fixed asserts that 
-  no element s with b_i^(s*g)==b_i^g (i <= k) satisfies prop.
+  that is test(g,k) false asserts that 
+  no element s with b[1:k].^(s*g)==b[1:k].^g satisfies prop.
 
 `stats` is a `Ref{Int}` incremented for every search node.
 """
 function subgroup_search(G::PermGroup{T}, prop; base=nothing, K=nothing,
                          test=nothing, stats=nothing, verbose=false) where T
-  B = base === nothing ? PermGroups.base(get_stabchain(G)) : Vector{T}(base)
-  S = stabchain(G, B)
+  S=isnothing(base) ? get_stabchain(G) : stabchain(G, base)
   B = PermGroups.base(S)          # stabchain may have extended the base
-  if isempty(S)                    # trivial group
+  if isempty(S)        # trivial group
     return Group(Perm{T}[x for x in elements(G) if prop(x)])
   end
   gensK = K === nothing ? Perm{T}[] : collect(Perm{T}, gens(K))
@@ -498,7 +497,7 @@ end
 function stabilizer3(W::PermGroup,g::Perm)
   if debug[] println("using stabilizer(PG,Perm)") end
   cc=orbits(g,1:last_moved(W),trivial=true)
-  sort!(cc,by=length)
+  sort!(cc,by=x->length(x))
   d=Dict{Int,Tuple{Int,Int,Int}}()
   for i in eachindex(cc), (j,k) in enumerate(cc[i])
     d[k]=(length(cc[i]),i,j)
@@ -526,16 +525,21 @@ function stabilizer3(W::PermGroup,g::Perm)
   subgroup_search(W,property;base=b,test,K=Group(vcat(g,filter(property,gens(W)))))
 end
 
-# encore buggé pour E6 et unique(refls(D4:2:5))
-function stabilizer4(W::PermGroup,p::AbstractVector{<:Perm},::typeof(onsets))
+function stabilizer5(W::PermGroup,g::Perm)
   if debug[] println("using stabilizer(PG,Vec{Perm},onsets)") end
-  S=get_stabchain(W)
-  b=base(S)
-  test(h,l)=all(g1->any(g->(u=h\g1;v=g/h;all(i->b[i]^u==b[i]^v,1:min(l,length(b)))),p),p)
-  p=sort(p)
-  property(g)=onsets(p,g)==p
-  subgroup_search(W,property;test)
+  o=cycles(g)
+  sort!(o,by=x->-length(x))
+  b=first.(o)
+  d=Dict{Int,Int}()
+  for (i,oo) in enumerate(o) for j in oo d[j]=i end end
+# findo(i)=findfirst(or->i in or,o)
+  findo(i)=d[i]
+  test(h,l)=allunique(findo.(b[1:l]))
+  property(h)=g^h==g
+  subgroup_search(W,property;base=b,test)
 end
+
+include("onsets_test.jl")
 
 function Groups.transporting_elt(W::PermGroup,b::AbstractVector{<:Integer},b1::AbstractVector{<:Integer},::typeof(ontuples))
   if debug[] println("using transp(PG,Vec{Int},Vec{Int},ontuples)") end
