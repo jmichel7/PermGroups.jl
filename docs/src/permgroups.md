@@ -7,6 +7,8 @@ in(::Perm,::PermGroup)
 Stabchain
 stabchain(::PermGroup,::Any)
 get_stabchain(::PermGroup)
+search
+subgroup_search
 on_classes(::Any,::Any)
 symmetric_group
 onmats
