@@ -692,9 +692,8 @@ end
 Base.in(w,G::Group)=haskey(words2(G),w)
 
 """
-`length(G::Group)` the number of elements of `G`.
-
-`length(T,G)` do the computation with the integer type `T`.
+`length(G::Group)`  the  number  of  elements of `G`. Note that the result
+can be an `Int, Int128, BìgInt` depending on the size of `G`.
 """
 Base.length(G::Group)=length(words2(G))
 

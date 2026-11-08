@@ -766,10 +766,6 @@ end
 end
 
 #------------------------- iteration for PermGroups -----------------------
-"""
-`length(G::PermGroup)`  the  number  of  elements of `G`. Note that the result
-can be an Ìnt128`or a ìgInt`depending on the size of `G`.
-"""
 function Base.length(G::PermGroup)
   get!(G,:length)do
     T=Int;l=0
@@ -952,13 +948,13 @@ function Perm_onmats(M,N,m=nothing,n=nothing;verbose=false)
       if length(I)>7
         if verbose println("large block size $(length(I))") end
         if length(iM)==1
-          p=transporting_elt(sg(length(I)),M[I,I],N[J,J],
+          p=transporting_elt(symmetric_group(length(I)),M[I,I],N[J,J],
                 onmats,dist=(M,N)->sum(x->count(!iszero,x),M-N))
         elseif isnothing(m) p=Perm_onmats(M[I,I],N[J,J])
         else p=Perm_onmats(M[I,I],N[J,J],m[I],n[J])
         end
       else
-        p=transporting_elt(sg(length(I)),M[I,I],N[J,J],onmats)
+        p=transporting_elt(symmetric_group(length(I)),M[I,I],N[J,J],onmats)
       end
       if isnothing(p) return false end
       I=invpermute(I,p)
