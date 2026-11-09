@@ -338,6 +338,18 @@ function Groups.stabilizer(G::PermGroup,p::AbstractVector{<:Integer},::typeof(on
   S[i].c
 end
 
+function Groups.stabilizer(G::PermGroup,p::Perm,::typeof(^);GAP=false)
+  if GAP
+    m=Base.get_extension(PermGroups,:Gap4)
+    if isnothing(m)
+      error("need GAP centralizer; do 'using GAP' to make extension available")
+    end
+    m.centralizer(G,p)
+  else invoke(Groups.stabilizer,Tuple{Group,Any,Function},G,p,^)
+  end
+end
+
+
 """
 `search(W::PermGroup,prop;all=true,test=nothing,base=nothing)`
 
@@ -488,10 +500,19 @@ function Groups.normalizer(W::PermGroup,R::PermGroup)
   subgroup_search(W,property;K=R)
 end
 
-function Base.intersect(W::PermGroup,R::PermGroup)
+function Base.intersect(W::PermGroup,R::PermGroup;GAP=true)
   if length(W)>length(R) W,R=R,W end
-  property(g)=g in R
-  subgroup_search(W,property)
+  if length(W)<=104000 || !GAP
+    property(g)=g in R
+    subgroup_search(W,property)
+  else
+    m=Base.get_extension(PermGroups,:Gap4)
+    if isnothing(m)
+       error("*** too large intersect($W,$R)\n",
+           "need GAP intersect; do 'using GAP' to make extension available") 
+    end
+    m.intersect(W,R)
+  end
 end
 
 # another attempt
@@ -659,6 +680,19 @@ function Groups.elements(C::ConjugacyClass{T,TW})where{T,TW<:PermGroup}
     if length(l)>10000 println("!! computed class of size ",length(l)) end
     l
   end::Vector{T}
+end
+
+function Groups.classreps(G::PermGroup;GAP=true)
+  get!(G,:classreps)do
+    if GAP && length(G)>19000
+      m=Base.get_extension(PermGroups,:Gap4)
+      if isnothing(m)
+        error("need GAP classreps; do 'using GAP' to make extension available")
+      end
+      m.gapclassreps(G)
+    else map(c->c.representative,conjugacy_classes(G)) 
+    end
+  end
 end
 
 " The cycle types of conjugacy class `C` on each orbit of `C.G`"
