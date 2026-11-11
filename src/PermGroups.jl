@@ -547,20 +547,6 @@ function stabilizer3(W::PermGroup,g::Perm)
   subgroup_search(W,property;base=b,test,K=Group(vcat(g,filter(property,gens(W)))))
 end
 
-function stabilizer5(W::PermGroup,g::Perm)
-  if debug println("using stabilizer(PG,Vec{Perm},onsets)") end
-  o=cycles(g)
-  sort!(o,by=x->-length(x))
-  b=first.(o)
-  d=Dict{Int,Int}()
-  for (i,oo) in enumerate(o) for j in oo d[j]=i end end
-# findo(i)=findfirst(or->i in or,o)
-  findo(i)=d[i]
-  test(h,l)=allunique(findo.(b[1:l]))
-  property(h)=g^h==g
-  subgroup_search(W,property;base=b,test)
-end
-
 include("onsets_test.jl")
 
 function Groups.transporting_elt(W::PermGroup,b::AbstractVector{<:Integer},b1::AbstractVector{<:Integer},::typeof(ontuples))
