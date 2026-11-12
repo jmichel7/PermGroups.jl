@@ -173,7 +173,7 @@ asked  for.  So  it  has  fixed  fields  but can dynamically have new ones.
 Accessing  fixed  fields  is  as  efficient  as  a  field  of any `struct`.
 Accessing a dynamic field takes the time of a `Dict` lookup.
 
-```julia_repl
+```julia-repl
 julia> @GapObj struct Foo
        a::Int
        end
@@ -927,7 +927,7 @@ julia> T=Group(Perm(1,2))
 Group((1,2))
 
 julia> h=Hom(S,T,[T(1),T(1)])
-Hom(Group((1,2),(2,3))→ Group((1,2));[(1,2), (2,3)]↦ [(1,2), (1,2)]
+Hom(Group((1,2),(2,3))→ Group((1,2));[(1,2), (2,3)]↦ [(1,2), (1,2)])
 
 julia> h(S(1,2)) # the image by h
 ()
