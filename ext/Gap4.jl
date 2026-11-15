@@ -64,48 +64,6 @@ function gapclassreps(g::PermGroup)
   mapgap(Perm∘GAP.Globals.Representative,GAP.Globals.ConjugacyClasses(gg))
 end
 
-#fromgap(g)=GAP.gap_to_julia(g)
-
-#function CyclotomicNumbers.Cyc(p::GapObj)
-#  l=improve_type(Vector{Any}(GAP.Globals.ExtRepOfObj(p)))
-#  sum(i->E(length(l),i-1)*l[i],eachindex(l))
-#end
-
-#function Chars.CharTable(ct::GapObj)
-#  u=GAP.Globals.Irr(ct)
-#  girr=mapgap(x->mapgap(Cyc,x),u) 
-#  irr=permutedims(hcat(girr...))
-#  n=fromgap.(GAP.Globals.ClassNames(ct))
-#  cn=fromgap.(GAP.Globals.CharacterNames(ct))
-#  sz=identity.(fromgap(GAP.Globals.SizesCentralisers(ct)))
-#  s=fromgap(GAP.Globals.Size(ct))
-#  id=fromgap(GAP.Globals.Identifier(ct))
-#  orders=fromgap(GAP.Globals.OrdersClassRepresentatives(ct))
-#  pp=keys(factor(s))
-#  powermaps=Vector{Any}(fill(nothing,maximum(pp;init=0)))
-#  for k in pp
-#    powermaps[k]=fromgap(GAP.Globals.PowerMap(ct,k))
-#  end
-#  Chars.CharTable(irr,cn,n,sz,s,Dict{Symbol,Any}(:name=>id,:orders=>orders,
-#                                                :powermaps=>powermaps))
-#end
-
-#function Chars.CharTable(g::PermGroup)
-#  gg=GAP.Obj(g)
-#  gc=gapclassreps(g) # in case :classreps did not use gapclassreps
-#  l=map(x->position_class(g,x),gc)
-#  ct=CharTable(GAP.Globals.CharacterTable(gg))
-#  ct.irr[:,l]=ct.irr
-#  ct.classnames[l]=ct.classnames
-#  ct.orders[l]=ct.orders
-#  for i in eachindex(ct.powermaps)
-#    if ct.powermaps[i]!=nothing
-#      ct.powermaps[i][l]=ct.powermaps[i]
-#    end
-#  end
-#  ct
-#end
-
 function centralizer(g::PermGroup,p::Perm)
   gg=GAP.Obj(g)
   pp=GAP.Obj(p)
@@ -119,35 +77,5 @@ function intersect(g1::PermGroup,g2::PermGroup)
   gg=GAP.Globals.Intersection(gg1,gg2)
   Group(Perm.(GAP.Globals.GeneratorsOfGroup(gg)))
 end
-
-#function GAP.Obj(g::FpGroup)
-#  get!(g,:GAP)do
-#    v=Symbol.(g.gens)
-#    gapg=GAP.Globals.FreeGroup(GAP.Obj(v,recursive=true))
-#    gapgens=getproperty.(Ref(gapg),eachindex(v))
-#    gaprels=map(g.rels)do rel
-#      res=gapgens[1]^0
-#      for p in rel.d
-#        res*=gapgens[findfirst(==(p[1]),v)]^p[2]
-#      end
-#      res
-#    end
-#    gapg/GAP.Obj(gaprels)
-#  end
-#end
-#
-#function Base.length(g::FpGroup)
-#  get!(g,:length)do
-#    GAP.Globals.Size(GAP.Obj(g))
-#  end
-#end
-#
-#function Groups.elements(g::FpGroup)
-#  get!(g,:elements)do
-#    l=collect(GAP.Globals.Elements(GAP.Obj(g)))
-#    l=collect.(GAP.Globals.ExtRepOfObj.(l))
-#    map(w->prod(x->g.gens[x[1]]^x[2],Iterators.partition(w,2);init=one(g)),l)
-#  end
-#end
 
 end
